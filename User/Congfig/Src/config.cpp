@@ -22,7 +22,7 @@ const Struct_Joint_Limit Right_Arm_Joint_Limit[CONTROLLER_JOINT_NUM] =
 
 const Struct_Joint_Binding Left_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
 {
-    {Controller_Motor_Type_UNITREE, Controller_Bus_Type_RS232, 0x0001},
+    {Controller_Motor_Type_UNITREE, Controller_Bus_Type_RS485, 0x0001},
     {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN1, 0x0001},
     {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN1, 0x0002},
     {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN1, 0x0003},
@@ -32,7 +32,7 @@ const Struct_Joint_Binding Left_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
 
 const Struct_Joint_Binding Right_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
 {
-    {Controller_Motor_Type_UNITREE, Controller_Bus_Type_RS232, 0x0002},
+    {Controller_Motor_Type_UNITREE, Controller_Bus_Type_RS485, 0x0002},
     {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN2, 0x0001},
     {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN2, 0x0002},
     {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN2, 0x0003},

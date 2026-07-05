@@ -24,7 +24,7 @@ public:
 
     void CAN1_Motor_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage);
     void CAN2_Motor_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage);
-    void RS232_Motor_Bus_RxCpltCallback(uint8_t *Buffer, uint16_t Length);
+    void RS485_Motor_Bus_RxCpltCallback(uint8_t *Buffer, uint16_t Length);
     void Referee_UART_RxCpltCallback(uint8_t *Buffer, uint16_t Length);
     void Peer_UART_RxCpltCallback(uint8_t *Buffer, uint16_t Length);
     void LCD_SPI_RxCpltCallback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Length);

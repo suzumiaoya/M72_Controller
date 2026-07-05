@@ -93,11 +93,12 @@ void Class_Manipulator::Update_Current_State()
 
 void Class_Manipulator::CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
-    if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J1].Device_ID)
+    // AK电机返回帧为CAN_ID+0x10
+    if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J1].Device_ID + 0x10)
     {
         Motor_J1.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
-    else if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J2].Device_ID)
+    else if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J2].Device_ID + 0x10)
     {
         Motor_J2.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }

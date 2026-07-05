@@ -19,9 +19,9 @@ void CAN2_Motor_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     controller.CAN2_Motor_RxCpltCallback(CAN_RxMessage);
 }
 
-void RS232_Motor_Bus_Callback(uint8_t *Buffer, uint16_t Length)
+void RS485_Motor_Bus_Callback(uint8_t *Buffer, uint16_t Length)
 {
-    controller.RS232_Motor_Bus_RxCpltCallback(Buffer, Length);
+    controller.RS485_Motor_Bus_RxCpltCallback(Buffer, Length);
 }
 
 void Referee_UART_Callback(uint8_t *Buffer, uint16_t Length)
@@ -63,7 +63,7 @@ extern "C" void Task_Init()
     CAN_Init(&hfdcan1, CAN1_Motor_Callback);
     CAN_Init(&hfdcan2, CAN2_Motor_Callback);
 
-    UART_Init(&huart5, RS232_Motor_Bus_Callback, 64);
+    UART_Init(&huart5, RS485_Motor_Bus_Callback, 64);
     UART_Init(&huart8, Peer_UART_Callback, 64);
     UART_Init(&huart10, Referee_UART_Callback, 64);
 

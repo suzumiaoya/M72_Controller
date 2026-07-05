@@ -33,7 +33,7 @@ void Class_Controller::CAN2_Motor_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMes
     Right_Arm.CAN_RxCpltCallback(CAN_RxMessage);
 }
 
-void Class_Controller::RS232_Motor_Bus_RxCpltCallback(uint8_t *Buffer, uint16_t Length)
+void Class_Controller::RS485_Motor_Bus_RxCpltCallback(uint8_t *Buffer, uint16_t Length)
 {
     Left_Arm.UART_RxCpltCallback(Buffer, Length);
     Right_Arm.UART_RxCpltCallback(Buffer, Length);

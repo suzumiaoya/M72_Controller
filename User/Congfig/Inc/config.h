@@ -33,7 +33,7 @@ enum Enum_Controller_Motor_Type
 
 enum Enum_Controller_Bus_Type
 {
-    Controller_Bus_Type_RS232 = 0,
+    Controller_Bus_Type_RS485 = 0,
     Controller_Bus_Type_CAN1,
     Controller_Bus_Type_CAN2,
 };
