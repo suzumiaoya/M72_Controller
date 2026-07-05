@@ -277,7 +277,10 @@ void Class_AK_Motor_80_6::Task_Alive_PeriodElapsedCallback()
         break;
         case (AK_Motor_Control_Status_ENABLE):
         {
+            if (Pre_AK_Motor_Control_Status != AK_Motor_Control_Status_ENABLE)
+        {
             CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Enter, 8, FDCAN_STANDARD_ID);
+            }
         }
         break;
         default:
@@ -293,6 +296,7 @@ void Class_AK_Motor_80_6::Task_Alive_PeriodElapsedCallback()
     break;
     }
 
+    Pre_AK_Motor_Control_Status = AK_Motor_Control_Status;
     Pre_Flag = Flag;
 }
 

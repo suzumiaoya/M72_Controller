@@ -7,6 +7,8 @@
 #include "dvc_unitree_motor.h"
 #include "dvc_ak80_motor.h"
 #include "dvc_zdt_motor.h"
+#include "alg_dh_model.h"
+#include "alg_gravity_comp.h"
 
 enum Enum_Manipulator_Control_Status
 {
@@ -46,6 +48,8 @@ protected:
     Enum_Manipulator_ID Manipulator_ID = Manipulator_ID_LEFT;
     const Struct_Joint_Limit *Joint_Limit = 0;
     const Struct_Joint_Binding *Joint_Binding = 0;
+    Class_DH_Model DH_Model;
+    Class_Gravity_Comp Gravity_Comp;
 
     Enum_Manipulator_Control_Status Manipulator_Control_Status = Manipulator_Control_Status_DISABLE;
     float Target_Joint_Angle[CONTROLLER_JOINT_NUM] = {0.0f};

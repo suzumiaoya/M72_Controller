@@ -93,12 +93,14 @@ void Class_Manipulator::Update_Current_State()
 
 void Class_Manipulator::CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
-    // AK电机返回帧为CAN_ID+0x10
-    if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J1].Device_ID + 0x10)
+    // AK电机返回帧头为0x00，判断第一位数据区分电机
+    if (CAN_RxMessage->Header.Identifier == 0x00 &&
+        CAN_RxMessage->Data[0] == Joint_Binding[Controller_Joint_ID_J1].Device_ID)
     {
         Motor_J1.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
-    else if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J2].Device_ID + 0x10)
+    else if (CAN_RxMessage->Header.Identifier == 0x00 &&
+        CAN_RxMessage->Data[0] == Joint_Binding[Controller_Joint_ID_J2].Device_ID)
     {
         Motor_J2.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
@@ -123,14 +125,37 @@ void Class_Manipulator::UART_RxCpltCallback(uint8_t *Buffer, uint16_t Length)
 
 void Class_Manipulator::TIM_Calculate_PeriodElapsedCallback()
 {
+    static uint8_t mod3 = 0;
+    mod3++;
+
     Output();
 
     Motor_J0.TIM_Process_PeriodElapsedCallback();
-    Motor_J1.Task_Process_PeriodElapsedCallback();
-    Motor_J2.Task_Process_PeriodElapsedCallback();
-    Motor_J3.TIM_Process_PeriodElapsedCallback();
-    Motor_J4.TIM_Process_PeriodElapsedCallback();
-    Motor_J5.TIM_Process_PeriodElapsedCallback();
+
+    // 分时发送CAN包
+    switch(mod3)
+    {
+        case (1):
+        {
+            Motor_J1.Task_Process_PeriodElapsedCallback();
+            Motor_J3.TIM_Process_PeriodElapsedCallback();
+        }
+        break;
+
+        case (2):
+        {
+            Motor_J2.Task_Process_PeriodElapsedCallback();
+            Motor_J4.TIM_Process_PeriodElapsedCallback();
+        }
+        break;
+
+        case (3):
+        {
+            Motor_J5.TIM_Process_PeriodElapsedCallback();
+            mod3 = 0;
+        }
+        break;
+    }
 
     Update_Current_State();
 }
