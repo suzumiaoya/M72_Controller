@@ -35,7 +35,8 @@ extern "C" {
 
 //RPM换算到角度/s
 #define RPM_TO_DEG (360.0f / 60.0f)
-
+//rad换算到deg
+#define RAD_TO_DEG (180.0f / PI)
 //deg换算到rad
 #define DEG_TO_RAD (PI / 180.0f)
 //摄氏度换算到开氏度

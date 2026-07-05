@@ -11,9 +11,9 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
     {
         Joint_Limit = Left_Arm_Joint_Limit;
         Joint_Binding = Left_Arm_Joint_Binding;
-
-        Motor_J1.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J1].Device_ID);
-        Motor_J2.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J2].Device_ID);
+        
+        Motor_J1.Init(&hfdcan1, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J1].Device_ID));
+        Motor_J2.Init(&hfdcan1, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J2].Device_ID));
         Motor_J3.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J3].Device_ID);
         Motor_J4.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J4].Device_ID);
         Motor_J5.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J5].Device_ID);
@@ -23,8 +23,8 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
         Joint_Limit = Right_Arm_Joint_Limit;
         Joint_Binding = Right_Arm_Joint_Binding;
 
-        Motor_J1.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J1].Device_ID);
-        Motor_J2.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J2].Device_ID);
+        Motor_J1.Init(&hfdcan2, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J1].Device_ID));
+        Motor_J2.Init(&hfdcan2, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J2].Device_ID));
         Motor_J3.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J3].Device_ID);
         Motor_J4.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J4].Device_ID);
         Motor_J5.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J5].Device_ID);
@@ -39,8 +39,8 @@ void Class_Manipulator::Output()
     if (Manipulator_Control_Status == Manipulator_Control_Status_DISABLE)
     {
         Motor_J0.Set_Unitree_Motor_Control_Status(Unitree_Motor_Control_Status_DISABLE);
-        Motor_J1.Set_AK80_Motor_Control_Status(AK80_Motor_Control_Status_DISABLE);
-        Motor_J2.Set_AK80_Motor_Control_Status(AK80_Motor_Control_Status_DISABLE);
+        Motor_J1.Set_AK_Control_Status(AK_Motor_Control_Status_DISABLE);
+        Motor_J2.Set_AK_Control_Status(AK_Motor_Control_Status_DISABLE);
         Motor_J3.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_DISABLE);
         Motor_J4.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_DISABLE);
         Motor_J5.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_DISABLE);
@@ -53,8 +53,8 @@ void Class_Manipulator::Output()
     }
 
     Motor_J0.Set_Unitree_Motor_Control_Status(Unitree_Motor_Control_Status_ENABLE);
-    Motor_J1.Set_AK80_Motor_Control_Status(AK80_Motor_Control_Status_ENABLE);
-    Motor_J2.Set_AK80_Motor_Control_Status(AK80_Motor_Control_Status_ENABLE);
+    Motor_J1.Set_AK_Control_Status(AK_Motor_Control_Status_ENABLE);
+    Motor_J2.Set_AK_Control_Status(AK_Motor_Control_Status_ENABLE);
     Motor_J3.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_ENABLE);
     Motor_J4.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_ENABLE);
     Motor_J5.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_ENABLE);
@@ -125,8 +125,8 @@ void Class_Manipulator::TIM_Calculate_PeriodElapsedCallback()
     Output();
 
     Motor_J0.TIM_Process_PeriodElapsedCallback();
-    Motor_J1.TIM_Process_PeriodElapsedCallback();
-    Motor_J2.TIM_Process_PeriodElapsedCallback();
+    Motor_J1.Task_Process_PeriodElapsedCallback();
+    Motor_J2.Task_Process_PeriodElapsedCallback();
     Motor_J3.TIM_Process_PeriodElapsedCallback();
     Motor_J4.TIM_Process_PeriodElapsedCallback();
     Motor_J5.TIM_Process_PeriodElapsedCallback();
@@ -137,8 +137,8 @@ void Class_Manipulator::TIM_Calculate_PeriodElapsedCallback()
 void Class_Manipulator::TIM1msMod50_Alive_PeriodElapsedCallback()
 {
     Motor_J0.TIM_Alive_PeriodElapsedCallback();
-    Motor_J1.TIM_Alive_PeriodElapsedCallback();
-    Motor_J2.TIM_Alive_PeriodElapsedCallback();
+    Motor_J1.Task_Alive_PeriodElapsedCallback();
+    Motor_J2.Task_Alive_PeriodElapsedCallback();
     Motor_J3.TIM_Alive_PeriodElapsedCallback();
     Motor_J4.TIM_Alive_PeriodElapsedCallback();
     Motor_J5.TIM_Alive_PeriodElapsedCallback();

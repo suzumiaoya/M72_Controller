@@ -18,8 +18,8 @@ class Class_Manipulator
 {
 public:
     Class_Unitree_Motor Motor_J0;
-    Class_AK80_Motor Motor_J1;
-    Class_AK80_Motor Motor_J2;
+    Class_AK_Motor_80_6 Motor_J1;
+    Class_AK_Motor_80_6 Motor_J2;
     Class_ZDT_Motor Motor_J3;
     Class_ZDT_Motor Motor_J4;
     Class_ZDT_Motor Motor_J5;

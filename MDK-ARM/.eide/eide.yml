@@ -22,7 +22,6 @@ virtualFolder:
       folders: []
     - name: Device
       files:
-        - path: ../User/Device/Src/dvc_dmmotor.cpp
         - path: ../User/Device/Src/dvc_dwt.cpp
         - path: ../User/Device/Src/dvc_referee.cpp
         - path: ../User/Device/Src/dvc_ak80_motor.cpp
@@ -50,6 +49,7 @@ virtualFolder:
         - path: ../User/Algorithm/Src/alg_SMC_Control.cpp
         - path: ../User/Algorithm/Src/alg_dh_model.cpp
         - path: ../User/Algorithm/Src/alg_gravity_comp.cpp
+        - path: ../User/Algorithm/Src/alg_slope.cpp
       folders: []
     - name: Application
       files: []

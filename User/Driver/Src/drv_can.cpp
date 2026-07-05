@@ -23,90 +23,23 @@ Struct_CAN_Manage_Object CAN2_Manage_Object = {0};
 Struct_CAN_Manage_Object CAN3_Manage_Object = {0};
 
 // CAN通信发送缓冲区
-uint8_t CAN1_0x1ff_Tx_Data[8];
-uint8_t CAN1_0x1fe_Tx_Data[8];
-uint8_t CAN1_0x200_Tx_Data[8];
-uint8_t CAN1_0x2ff_Tx_Data[8];
-uint8_t CAN1_0xxf1_Tx_Data[8];
-uint8_t CAN1_0xxf2_Tx_Data[8];
-uint8_t CAN1_0xxf3_Tx_Data[8];
-uint8_t CAN1_0xxf4_Tx_Data[8];
-uint8_t CAN1_0xxf5_Tx_Data[8];
-uint8_t CAN1_0xxf6_Tx_Data[8];
-uint8_t CAN1_0xxf7_Tx_Data[8];
-uint8_t CAN1_0xxf8_Tx_Data[8];
+uint8_t CAN1_0xx01_Tx_Data[8];
+uint8_t CAN1_0xx02_Tx_Data[8];
+uint8_t CAN1_0xx03_Tx_Data[8];
+uint8_t CAN1_0xx04_Tx_Data[8];
+uint8_t CAN1_0xx05_Tx_Data[8];
+uint8_t CAN1_0xx06_Tx_Data[8];
+uint8_t CAN1_0xx07_Tx_Data[8];
+uint8_t CAN1_0xx08_Tx_Data[8];
 
-uint8_t CAN2_0x1ff_Tx_Data[8];
-uint8_t CAN2_0x1fe_Tx_Data[8];
-uint8_t CAN2_0x200_Tx_Data[8];
-uint8_t CAN2_0x2ff_Tx_Data[8];
-uint8_t CAN2_0xxf1_Tx_Data[8];
-uint8_t CAN2_0xxf2_Tx_Data[8];
-uint8_t CAN2_0xxf3_Tx_Data[8];
-uint8_t CAN2_0xxf4_Tx_Data[8];
-uint8_t CAN2_0xxf5_Tx_Data[8];
-uint8_t CAN2_0xxf6_Tx_Data[8];
-uint8_t CAN2_0xxf7_Tx_Data[8];
-uint8_t CAN2_0xxf8_Tx_Data[8];
-
-uint8_t CAN3_0x1ff_Tx_Data[8];
-uint8_t CAN3_0x1fe_Tx_Data[8];
-uint8_t CAN3_0x200_Tx_Data[8];
-uint8_t CAN3_0x2ff_Tx_Data[8];
-uint8_t CAN3_0xxf1_Tx_Data[8];
-uint8_t CAN3_0xxf2_Tx_Data[8];
-uint8_t CAN3_0xxf3_Tx_Data[8];
-uint8_t CAN3_0xxf4_Tx_Data[8];
-uint8_t CAN3_0xxf5_Tx_Data[8];
-uint8_t CAN3_0xxf6_Tx_Data[8];
-uint8_t CAN3_0xxf7_Tx_Data[8];
-uint8_t CAN3_0xxf8_Tx_Data[8];
-
-uint8_t CAN_Supercap_Tx_Data[8];
-uint8_t CAN3_Chassis_Tx_Data_A[8];   //底盘给云台发送缓冲区
-uint8_t CAN3_Chassis_Tx_Data_B[8];   //底盘给云台发送缓冲区
-uint8_t CAN3_Chassis_Tx_Data_C[8];   //底盘给云台发送缓冲区
-uint8_t CAN3_Chassis_Tx_Data_D[8];   //底盘给云台发送缓冲区
-uint8_t CAN3_Chassis_Tx_Data_E[8];   //底盘给云台发送缓冲区
-uint8_t CAN3_Chassis_Tx_Data_F[8];   //底盘给云台发送缓冲区
-uint8_t CAN3_Chassis_Tx_Data_G[8];   //底盘给云台发送缓冲区
-uint8_t CAN3_MiniPC_Tx_Data_A[8];   //下位机发送缓冲区
-uint8_t CAN3_MiniPC_Tx_Data_B[8];   //下位机发送缓冲区
-uint8_t CAN3_MiniPC_Tx_Data_C[8];   //下位机发送缓冲区
-uint8_t CAN3_MiniPC_Tx_Data_D[8];   //下位机发送缓冲区
-uint8_t CAN3_Gimbal_Tx_Chassis_Data[8];  //云台给底盘发送缓冲区
-uint8_t CAN3_Sentry_CMD_Data[8];   //云台给底盘发送缓冲区
-
-/*********LK电机 控制缓冲区***********/
-uint8_t CAN1_0x141_Tx_Data[8];
-uint8_t CAN1_0x142_Tx_Data[8];
-uint8_t CAN1_0x143_Tx_Data[8];
-uint8_t CAN1_0x144_Tx_Data[8];
-uint8_t CAN1_0x145_Tx_Data[8];
-uint8_t CAN1_0x146_Tx_Data[8];
-uint8_t CAN1_0x147_Tx_Data[8];
-uint8_t CAN1_0x148_Tx_Data[8];
-
-uint8_t CAN2_0x141_Tx_Data[8];    
-uint8_t CAN2_0x142_Tx_Data[8];
-uint8_t CAN2_0x143_Tx_Data[8];
-uint8_t CAN2_0x144_Tx_Data[8];
-uint8_t CAN2_0x145_Tx_Data[8];    
-uint8_t CAN2_0x146_Tx_Data[8];
-uint8_t CAN2_0x147_Tx_Data[8];
-uint8_t CAN2_0x148_Tx_Data[8];
-
-uint8_t CAN3_0x141_Tx_Data[8];
-uint8_t CAN3_0x142_Tx_Data[8];
-uint8_t CAN3_0x143_Tx_Data[8];
-uint8_t CAN3_0x144_Tx_Data[8];
-uint8_t CAN3_0x145_Tx_Data[8];
-uint8_t CAN3_0x146_Tx_Data[8];
-uint8_t CAN3_0x147_Tx_Data[8];
-uint8_t CAN3_0x148_Tx_Data[8];
-
-/***************DM-IMU************* */
-uint8_t CAN3_0x01_Tx_Data[8];
+uint8_t CAN2_0xx01_Tx_Data[8];
+uint8_t CAN2_0xx02_Tx_Data[8];
+uint8_t CAN2_0xx03_Tx_Data[8];
+uint8_t CAN2_0xx04_Tx_Data[8];
+uint8_t CAN2_0xx05_Tx_Data[8];
+uint8_t CAN2_0xx06_Tx_Data[8];
+uint8_t CAN2_0xx07_Tx_Data[8];
+uint8_t CAN2_0xx08_Tx_Data[8];
 
 /* Private function declarations ---------------------------------------------*/
 
@@ -284,11 +217,11 @@ void CAN_Init(FDCAN_HandleTypeDef *hcan, CAN_Call_Back Callback_Function)
  * @param Length 长度
  * @return uint8_t 执行状态
  */
-uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uint16_t Length)
+uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uint16_t Length, uint32_t IdType)
 {
     FDCAN_TxHeaderTypeDef pTxHeader;
     pTxHeader.Identifier=ID;
-    pTxHeader.IdType=FDCAN_STANDARD_ID;
+    pTxHeader.IdType=IdType;
     pTxHeader.TxFrameType=FDCAN_DATA_FRAME;
 	
 	if(Length<=8)
