@@ -6,8 +6,7 @@ packDir: .pack/Keil/STM32H7xx_DFP.4.0.0
 srcDirs: []
 virtualFolder:
   name: <virtual_root>
-  files:
-    - path: ../Src/arm_cortexM7l_math.lib
+  files: []
   folders:
     - name: Config
       files:
@@ -197,6 +196,8 @@ targets:
         - .cmsis/libdsp
     excludeList:
       - <virtual_root>/::CMSIS/arm_cortexM7l_math.lib
+    settings:
+      debugger: cortex-debug
     toolchain: AC6
     toolchainConfigMap:
       AC6:
@@ -340,10 +341,10 @@ targets:
         - ../Drivers/CMSIS/Include
         - .cmsis/include
         - RTE/_ZLLC_2026
-        - ../Src
-        - ../DSP/Include
       libList: []
     excludeList: []
+    settings:
+      debugger: cortex-debug
     toolchain: AC6
     toolchainConfigMap:
       AC6:

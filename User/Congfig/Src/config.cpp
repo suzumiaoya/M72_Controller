@@ -1,28 +1,41 @@
-/**
- * @file config.cpp
- * @author cjw
- * @brief 宏
- * @version 0.1
- * @date 2025-07-1 0.1 26赛季定稿
- *
- * @copyright ZLLC 2026
- *
- */
-
-/* Includes ------------------------------------------------------------------*/
-
 #include "config.h"
 
-/* Private macros ------------------------------------------------------------*/
+const Struct_Joint_Limit Left_Arm_Joint_Limit[CONTROLLER_JOINT_NUM] =
+{
+    {-3.141593f, 3.141593f},
+    {-2.967060f, 2.967060f},
+    {-2.617994f, 2.617994f},
+    {-2.268928f, 2.268928f},
+    {-2.094395f, 2.094395f},
+    {-1.745329f, 1.745329f},
+};
 
-/* Private types -------------------------------------------------------------*/
+const Struct_Joint_Limit Right_Arm_Joint_Limit[CONTROLLER_JOINT_NUM] =
+{
+    {-3.141593f, 3.141593f},
+    {-2.792527f, 2.792527f},
+    {-2.617994f, 2.617994f},
+    {-2.268928f, 2.268928f},
+    {-1.919862f, 1.919862f},
+    {-1.570796f, 1.570796f},
+};
 
-/* Private variables ---------------------------------------------------------*/
+const Struct_Joint_Binding Left_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
+{
+    {Controller_Motor_Type_UNITREE, Controller_Bus_Type_RS232, 0x0001},
+    {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN1, 0x0001},
+    {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN1, 0x0002},
+    {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN1, 0x0003},
+    {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN1, 0x0004},
+    {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN1, 0x0005},
+};
 
-/* Private function declarations ---------------------------------------------*/
-
-/* Function prototypes -------------------------------------------------------*/
-
-
-
-/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
+const Struct_Joint_Binding Right_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
+{
+    {Controller_Motor_Type_UNITREE, Controller_Bus_Type_RS232, 0x0002},
+    {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN2, 0x0001},
+    {Controller_Motor_Type_AK80, Controller_Bus_Type_CAN2, 0x0002},
+    {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN2, 0x0003},
+    {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN2, 0x0004},
+    {Controller_Motor_Type_ZDT, Controller_Bus_Type_CAN2, 0x0005},
+};

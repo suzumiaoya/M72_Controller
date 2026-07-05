@@ -1,67 +1,60 @@
-/**
- * @file config.h
- * @author cjw
- * @brief 工程配置文件
- * @version 0.1
- * @date 2025-07-1 0.1 26赛季定稿
- *
- * @copyright ZLLC 2026
- *
- */
-
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include <stdint.h>
 
-/* Exported macros -----------------------------------------------------------*/
+#define CONTROLLER_ARM_COUNT      2U
+#define CONTROLLER_JOINT_NUM      6U
+#define CONTROLLER_CAN_JOINT_NUM  5U
 
-//底盘或云台状态
-//#define CHASSIS
-#define GIMBAL
+enum Enum_Manipulator_ID
+{
+    Manipulator_ID_LEFT = 0,
+    Manipulator_ID_RIGHT,
+};
 
-//调试或比赛状态
-#define DEBUG
+enum Enum_Controller_Joint_ID
+{
+    Controller_Joint_ID_J0 = 0,
+    Controller_Joint_ID_J1,
+    Controller_Joint_ID_J2,
+    Controller_Joint_ID_J3,
+    Controller_Joint_ID_J4,
+    Controller_Joint_ID_J5,
+};
 
-//功率控制相关
-#define POWER_CONTROL 1 //启用功率控制
-//#define BUFFER_LOOP
+enum Enum_Controller_Motor_Type
+{
+    Controller_Motor_Type_UNITREE = 0,
+    Controller_Motor_Type_AK80,
+    Controller_Motor_Type_ZDT,
+};
 
-//遥控器选择
-//#define USE_VT13
-#define USE_DR16
+enum Enum_Controller_Bus_Type
+{
+    Controller_Bus_Type_RS232 = 0,
+    Controller_Bus_Type_CAN1,
+    Controller_Bus_Type_CAN2,
+};
 
-/* 兵种/底盘类型选择*/
-#define AGV      //舵轮底盘
-//#define OMNI_WHEEL //全向轮底盘
+struct Struct_Joint_Limit
+{
+    float Min_Angle;
+    float Max_Angle;
+};
 
-//#define INFANTRY //步兵
-//#define HERO  //英雄
-#define SENTRY //哨兵
+struct Struct_Joint_Binding
+{
+    Enum_Controller_Motor_Type Motor_Type;
+    Enum_Controller_Bus_Type Bus_Type;
+    uint16_t Device_ID;
+};
 
-/*轮组数据*/
-#ifdef INFANTRY
-#define Wheel_Diameter 0.12000000f // 轮子直径，单位为m
-#endif 
+extern const Struct_Joint_Limit Left_Arm_Joint_Limit[CONTROLLER_JOINT_NUM];
+extern const Struct_Joint_Limit Right_Arm_Joint_Limit[CONTROLLER_JOINT_NUM];
 
-#ifdef HERO
-#define Wheel_Diameter 0.12000000f // 轮子直径，单位为m
-#endif 
+extern const Struct_Joint_Binding Left_Arm_Joint_Binding[CONTROLLER_JOINT_NUM];
+extern const Struct_Joint_Binding Right_Arm_Joint_Binding[CONTROLLER_JOINT_NUM];
 
-#ifdef SENTRY
-#define Wheel_Diameter 0.12000000f // 轮子直径，单位为m
-#define Chassis_Radius 0.46000000f // 底盘半径，单位为m
 #endif
-
-
-
-/* Exported types ------------------------------------------------------------*/
-
-
-/* Exported variables --------------------------------------------------------*/
-
-/* Exported function declarations --------------------------------------------*/
-
-#endif
-
-/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

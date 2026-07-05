@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32H723xx,__FPU_PRESENT=1,__FPU_USED=1,ARM_MATH_CM7,USE_PWR_LDO_SUPPLY</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../User/Congfig/Inc;../User/Task/Inc;../User/Interaction/Inc;../User/Chariot/Inc;../User/Device/Inc;../User/Driver/Inc;../User/Algorithm/Inc;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../User/Congfig/Inc;../User/Task/Inc;../User/Interaction/Inc;../User/Controller/Inc;../User/Device/Inc;../User/Driver/Inc;../User/Algorithm/Inc;../Drivers/CMSIS/Include;../DSP/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -405,29 +405,19 @@
           <GroupName>Interaction</GroupName>
           <Files>
             <File>
-              <FileName>ita_chariot.cpp</FileName>
+              <FileName>ita_controller.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\User\Interaction\Src\ita_chariot.cpp</FilePath>
+              <FilePath>..\User\Interaction\Src\ita_controller.cpp</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>Chariot</GroupName>
+          <GroupName>Controller</GroupName>
           <Files>
             <File>
-              <FileName>crt_booster.cpp</FileName>
+              <FileName>ctl_manipulator.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\User\Chariot\Src\crt_booster.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>crt_chassis.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Chariot\Src\crt_chassis.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>crt_gimbal.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Chariot\Src\crt_gimbal.cpp</FilePath>
+              <FilePath>..\User\Controller\Src\ctl_manipulator.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -435,24 +425,9 @@
           <GroupName>Device</GroupName>
           <Files>
             <File>
-              <FileName>dvc_boardc_bmi088.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_boardc_bmi088.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>dvc_djimotor.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_djimotor.cpp</FilePath>
-            </File>
-            <File>
               <FileName>dvc_dmmotor.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Device\Src\dvc_dmmotor.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>dvc_dr16.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_dr16.cpp</FilePath>
             </File>
             <File>
               <FileName>dvc_dwt.cpp</FileName>
@@ -460,59 +435,29 @@
               <FilePath>..\User\Device\Src\dvc_dwt.cpp</FilePath>
             </File>
             <File>
-              <FileName>dvc_imu.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_imu.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>dvc_lkmotor.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_lkmotor.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>dvc_minipc.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_minipc.cpp</FilePath>
-            </File>
-            <File>
               <FileName>dvc_referee.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Device\Src\dvc_referee.cpp</FilePath>
             </File>
             <File>
-              <FileName>dvc_supercap.cpp</FileName>
+              <FileName>dvc_unitree_motor.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_supercap.cpp</FilePath>
+              <FilePath>..\User\Device\Src\dvc_unitree_motor.cpp</FilePath>
             </File>
             <File>
-              <FileName>dvc_VT13.cpp</FileName>
+              <FileName>dvc_ak80_motor.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_VT13.cpp</FilePath>
+              <FilePath>..\User\Device\Src\dvc_ak80_motor.cpp</FilePath>
             </File>
             <File>
-              <FileName>dvc_GraphicsSendTask.cpp</FileName>
+              <FileName>dvc_zdt_motor.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_GraphicsSendTask.cpp</FilePath>
+              <FilePath>..\User\Device\Src\dvc_zdt_motor.cpp</FilePath>
             </File>
             <File>
-              <FileName>dvc_TensionMeter.cpp</FileName>
+              <FileName>dvc_lcd.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_TensionMeter.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>dvc_servo.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_servo.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>dvc_buzzer.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_buzzer.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>dvc_dmimu.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Device\Src\dvc_dmimu.cpp</FilePath>
+              <FilePath>..\User\Device\Src\dvc_lcd.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -564,11 +509,6 @@
               <FileType>8</FileType>
               <FilePath>..\User\Driver\Src\drv_uart.cpp</FilePath>
             </File>
-            <File>
-              <FileName>drv_usb.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Driver\Src\drv_usb.cpp</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -585,49 +525,24 @@
               <FilePath>..\User\Algorithm\Src\alg_fsm.cpp</FilePath>
             </File>
             <File>
-              <FileName>alg_MahonyAHRS.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\alg_MahonyAHRS.cpp</FilePath>
-            </File>
-            <File>
               <FileName>alg_pid.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Algorithm\Src\alg_pid.cpp</FilePath>
             </File>
             <File>
-              <FileName>alg_power_limit.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\alg_power_limit.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>alg_slope.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\alg_slope.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>kalman_filter.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\kalman_filter.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>PID.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\PID.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>QuaternionEKF.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\QuaternionEKF.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>user_lib.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\user_lib.cpp</FilePath>
-            </File>
-            <File>
               <FileName>alg_SMC_Control.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Algorithm\Src\alg_SMC_Control.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>alg_dh_model.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Algorithm\Src\alg_dh_model.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>alg_gravity_comp.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Algorithm\Src\alg_gravity_comp.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -745,21 +660,6 @@
         <Group>
           <GroupName>Drivers/STM32H7xx_HAL_Driver</GroupName>
           <Files>
-            <File>
-              <FileName>stm32h7xx_hal_pcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32h7xx_hal_pcd_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32h7xx_ll_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c</FilePath>
-            </File>
             <File>
               <FileName>stm32h7xx_hal_rcc.c</FileName>
               <FileType>1</FileType>
@@ -930,61 +830,6 @@
               <FileName>stm32h7xx_hal_uart_ex.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Application/User/USB_DEVICE/App</GroupName>
-          <Files>
-            <File>
-              <FileName>usb_device.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../USB_DEVICE/App/usb_device.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_desc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../USB_DEVICE/App/usbd_desc.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_cdc_if.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../USB_DEVICE/App/usbd_cdc_if.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Application/User/USB_DEVICE/Target</GroupName>
-          <Files>
-            <File>
-              <FileName>usbd_conf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../USB_DEVICE/Target/usbd_conf.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Middlewares/USB_Device_Library</GroupName>
-          <Files>
-            <File>
-              <FileName>usbd_core.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_ctlreq.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_ioreq.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_cdc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c</FilePath>
             </File>
           </Files>
         </Group>
