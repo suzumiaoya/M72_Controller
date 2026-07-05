@@ -18,32 +18,17 @@ virtualFolder:
       folders: []
     - name: Interaction
       files:
-        - path: ../User/Interaction/Src/ita_chariot.cpp
-      folders: []
-    - name: Chariot
-      files:
-        - path: ../User/Chariot/Src/crt_booster.cpp
-        - path: ../User/Chariot/Src/crt_chassis.cpp
-        - path: ../User/Chariot/Src/crt_gimbal.cpp
+        - path: ../User/Interaction/Src/ita_controller.cpp
       folders: []
     - name: Device
       files:
-        - path: ../User/Device/Src/dvc_boardc_bmi088.cpp
-        - path: ../User/Device/Src/dvc_djimotor.cpp
         - path: ../User/Device/Src/dvc_dmmotor.cpp
-        - path: ../User/Device/Src/dvc_dr16.cpp
         - path: ../User/Device/Src/dvc_dwt.cpp
-        - path: ../User/Device/Src/dvc_imu.cpp
-        - path: ../User/Device/Src/dvc_lkmotor.cpp
-        - path: ../User/Device/Src/dvc_minipc.cpp
         - path: ../User/Device/Src/dvc_referee.cpp
-        - path: ../User/Device/Src/dvc_supercap.cpp
-        - path: ../User/Device/Src/dvc_VT13.cpp
-        - path: ../User/Device/Src/dvc_GraphicsSendTask.cpp
-        - path: ../User/Device/Src/dvc_TensionMeter.cpp
-        - path: ../User/Device/Src/dvc_servo.cpp
-        - path: ../User/Device/Src/dvc_buzzer.cpp
-        - path: ../User/Device/Src/dvc_dmimu.cpp
+        - path: ../User/Device/Src/dvc_ak80_motor.cpp
+        - path: ../User/Device/Src/dvc_unitree_motor.cpp
+        - path: ../User/Device/Src/dvc_zdt_motor.cpp
+        - path: ../User/Device/Src/dvc_lcd.cpp
       folders: []
     - name: Driver
       files:
@@ -56,21 +41,15 @@ virtualFolder:
         - path: ../User/Driver/Src/drv_spi.cpp
         - path: ../User/Driver/Src/drv_tim.cpp
         - path: ../User/Driver/Src/drv_uart.cpp
-        - path: ../User/Driver/Src/drv_usb.cpp
       folders: []
     - name: Algorithm
       files:
         - path: ../User/Algorithm/Src/alg_filter.cpp
         - path: ../User/Algorithm/Src/alg_fsm.cpp
-        - path: ../User/Algorithm/Src/alg_MahonyAHRS.cpp
         - path: ../User/Algorithm/Src/alg_pid.cpp
-        - path: ../User/Algorithm/Src/alg_power_limit.cpp
-        - path: ../User/Algorithm/Src/alg_slope.cpp
-        - path: ../User/Algorithm/Src/kalman_filter.cpp
-        - path: ../User/Algorithm/Src/PID.cpp
-        - path: ../User/Algorithm/Src/QuaternionEKF.cpp
-        - path: ../User/Algorithm/Src/user_lib.cpp
         - path: ../User/Algorithm/Src/alg_SMC_Control.cpp
+        - path: ../User/Algorithm/Src/alg_dh_model.cpp
+        - path: ../User/Algorithm/Src/alg_gravity_comp.cpp
       folders: []
     - name: Application
       files: []
@@ -146,18 +125,12 @@ virtualFolder:
           files:
             - path: ../Core/Src/system_stm32h7xx.c
           folders: []
-    - name: Middlewares
-      files: []
-      folders:
-        - name: USB_Device_Library
-          files:
-            - path: ../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c
-            - path: ../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
-            - path: ../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
-            - path: ../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
-          folders: []
     - name: ::CMSIS
       files: []
+      folders: []
+    - name: Controller
+      files:
+        - path: ../User/Controller/Src/ctl_manipulator.cpp
       folders: []
 dependenceList: []
 outDir: .
@@ -341,8 +314,12 @@ targets:
         - ../Drivers/CMSIS/Include
         - .cmsis/include
         - RTE/_ZLLC_2026
+        - ../User/Controller/Inc
+        - ../DSP/Include/dsp
+        - ../DSP/Include
       libList: []
-    excludeList: []
+    excludeList:
+      - <virtual_root>/Middlewares/USB_Device_Library
     settings:
       debugger: cortex-debug
     toolchain: AC6

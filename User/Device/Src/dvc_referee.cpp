@@ -32,18 +32,20 @@ void Class_Referee::Init(UART_HandleTypeDef *huart, uint8_t __Frame_Header)
 
 uint16_t Class_Referee::Calculate_CRC16(const uint8_t *Buffer, uint16_t Length)
 {
-    uint16_t CRC = 0xFFFF;
+    uint16_t CRC_Value = 0xFFFF;
 
     for (uint16_t i = 0; i < Length; i++)
     {
-        CRC ^= Buffer[i];
+        CRC_Value ^= Buffer[i];
         for (uint8_t bit = 0; bit < 8; bit++)
         {
-            CRC = (CRC & 0x0001U) ? static_cast<uint16_t>((CRC >> 1) ^ 0xA001U) : static_cast<uint16_t>(CRC >> 1);
+            CRC_Value = (CRC_Value & 0x0001U)
+                            ? static_cast<uint16_t>((CRC_Value >> 1) ^ 0xA001U)
+                            : static_cast<uint16_t>(CRC_Value >> 1);
         }
     }
 
-    return (CRC);
+    return (CRC_Value);
 }
 
 void Class_Referee::UART_RxCpltCallback(uint8_t *Rx_Data, uint16_t Length)

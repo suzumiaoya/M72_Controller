@@ -12,6 +12,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "drv_math.h"
+#include <math.h>
 
 
 
@@ -148,7 +149,7 @@ float Math_Sinc(float x)
         return (1.0f);
     }
 
-    return (arm_sin_f32(x) / x);
+    return (sinf(x) / x);
 }
 
 /**
