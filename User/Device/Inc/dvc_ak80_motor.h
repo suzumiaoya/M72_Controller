@@ -119,7 +119,7 @@ public:
     Class_Slope Slope_Joint_Angle;
 
     void Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN_ID, Enum_AK_Motor_Control_Method __Control_Method = AK_CONTROL_METHOD_MIT,
-              float __MIT_K_P = 12.0f, float __MIT_K_D = 0.8f, int32_t __Position_Offset = 0,
+              float __MIT_K_P = 0.0f, float __MIT_K_D = 0.0f, int32_t __Position_Offset = 0,
               float __Angle_Max = 12.5f, float __Omega_Max = 76.0f, float __Torque_Max = 12.0f,
               float __Slope_Angle = 0.1f);
 

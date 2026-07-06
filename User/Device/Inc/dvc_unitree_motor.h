@@ -4,12 +4,14 @@
 #include "drv_uart.h"
 #include "drv_math.h"
 
+// 宇树电机在线状态
 enum Enum_Unitree_Motor_Status
 {
     Unitree_Motor_Status_DISABLE = 0,
     Unitree_Motor_Status_ENABLE,
 };
 
+// 宇树电机使能/失能状态
 enum Enum_Unitree_Motor_Control_Status
 {
     Unitree_Motor_Control_Status_DISABLE = 0,
@@ -22,6 +24,7 @@ public:
     void Init(Struct_UART_Manage_Object *__UART_Manage_Object, uint16_t __Node_ID = 0x0001);
 
     inline Enum_Unitree_Motor_Status Get_Unitree_Motor_Status();
+    inline Enum_Unitree_Motor_Control_Status Get_Unitree_Motor_Control_Status();
     inline float Get_Now_Angle();
     inline float Get_Now_Omega();
     inline float Get_Now_Torque();
@@ -53,6 +56,11 @@ protected:
 inline Enum_Unitree_Motor_Status Class_Unitree_Motor::Get_Unitree_Motor_Status()
 {
     return (Unitree_Motor_Status);
+}
+
+inline Enum_Unitree_Motor_Control_Status Class_Unitree_Motor::Get_Unitree_Motor_Control_Status()
+{
+    return (Unitree_Motor_Control_Status);
 }
 
 inline float Class_Unitree_Motor::Get_Now_Angle()

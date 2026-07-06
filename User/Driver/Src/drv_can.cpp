@@ -217,11 +217,11 @@ void CAN_Init(FDCAN_HandleTypeDef *hcan, CAN_Call_Back Callback_Function)
  * @param Length 长度
  * @return uint8_t 执行状态
  */
-uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uint16_t Length, uint32_t IdType)
+uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uint16_t Length)
 {
     FDCAN_TxHeaderTypeDef pTxHeader;
     pTxHeader.Identifier=ID;
-    pTxHeader.IdType=IdType;
+    pTxHeader.IdType=FDCAN_STANDARD_ID;
     pTxHeader.TxFrameType=FDCAN_DATA_FRAME;
 	
 	if(Length<=8)

@@ -272,14 +272,14 @@ void Class_AK_Motor_80_6::Task_Alive_PeriodElapsedCallback()
         {
         case (AK_Motor_Control_Status_DISABLE):
         {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Exit, 8, FDCAN_STANDARD_ID);
+            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Exit, 8);
         }
         break;
         case (AK_Motor_Control_Status_ENABLE):
         {
             if (Pre_AK_Motor_Control_Status != AK_Motor_Control_Status_ENABLE)
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Enter, 8, FDCAN_STANDARD_ID);
+            {
+                CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Enter, 8);
             }
         }
         break;
@@ -346,7 +346,7 @@ void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
         uint8_t tmp_torque_7_0 = tmp_torque;
         memcpy(&CAN_Tx_Data[7], &tmp_torque_7_0, sizeof(uint8_t));
 
-        CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8, FDCAN_STANDARD_ID);
+        CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8);
     }
     break;
     default:
