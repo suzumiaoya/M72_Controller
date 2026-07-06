@@ -183,6 +183,8 @@ void Class_AK_Motor_80_6::Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN
     AK_Motor_Status = AK_Motor_Status_DISABLE;
     AK_Motor_Control_Status = AK_Motor_Control_Status_DISABLE;
     Pre_AK_Motor_Control_Status = AK_Motor_Control_Status_DISABLE;
+    Clear_Enable_Confirm();
+    Clear_Torque_Delta_Data();
     Data.CAN_ID = __CAN_ID;
     Data.Now_Angle = 0.0f;
     Data.Now_Omega = 0.0f;
@@ -229,6 +231,11 @@ void Class_AK_Motor_80_6::Data_Process(uint8_t *Rx_Data)
     Data.Pre_Position = tmp_position;
     Data.Total_Position = tmp_position + Position_Offset;
     Data.Total_Round = 0;
+
+    if (AK_Motor_Control_Status == AK_Motor_Control_Status_ENABLE)
+    {
+        Torque_Delta_Data_Process();
+    }
 }
 
 /**
@@ -277,7 +284,15 @@ void Class_AK_Motor_80_6::Task_Alive_PeriodElapsedCallback()
         break;
         case (AK_Motor_Control_Status_ENABLE):
         {
+            // 上升沿触发一次请求使能帧
             if (Pre_AK_Motor_Control_Status != AK_Motor_Control_Status_ENABLE)
+            {
+                CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Enter, 8);
+                break;
+            }
+
+            // 在设置为使能状态下检测电机是否已经使能，若未使能则重发请求使能帧
+            if(Enable_Confirmed == 0)
             {
                 CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Enter, 8);
             }
@@ -353,6 +368,77 @@ void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
     {
     }
     break;
+    }
+}
+
+void Class_AK_Motor_80_6::Clear_Enable_Confirm()
+{
+    Enable_Confirmed = 0;
+    Enable_Confirm_Count = 0;
+}
+
+void Class_AK_Motor_80_6::Clear_Torque_Delta_Data()
+{
+    Torque_Delta_Data.Valid_Flag = 0;
+    Torque_Delta_Data.Pre_Now_Torque = 0.0f;
+    memset(Torque_Delta_Data.Delta_Buffer, 0, sizeof(Torque_Delta_Data.Delta_Buffer));
+    Torque_Delta_Data.Delta_Index = 0;
+    Torque_Delta_Data.Delta_Count = 0;
+    Torque_Delta_Data.Delta_Sum = 0.0f;
+    Torque_Delta_Data.Delta_Mean = 0.0f;
+}
+
+void Class_AK_Motor_80_6::Torque_Delta_Data_Process()
+{
+    if (Torque_Delta_Data.Valid_Flag == 0)
+    {
+        Torque_Delta_Data.Pre_Now_Torque = Data.Now_Torque;
+        Torque_Delta_Data.Valid_Flag = 1;
+    }
+    else
+    {
+        float tmp_delta = Math_Abs(Data.Now_Torque - Torque_Delta_Data.Pre_Now_Torque);
+        Torque_Delta_Data.Pre_Now_Torque = Data.Now_Torque;
+
+        if (Torque_Delta_Data.Delta_Count < 4)
+        {
+            Torque_Delta_Data.Delta_Buffer[Torque_Delta_Data.Delta_Index] = tmp_delta;
+            Torque_Delta_Data.Delta_Sum += tmp_delta;
+            Torque_Delta_Data.Delta_Count++;
+        }
+        else
+        {
+            Torque_Delta_Data.Delta_Sum -= Torque_Delta_Data.Delta_Buffer[Torque_Delta_Data.Delta_Index];
+            Torque_Delta_Data.Delta_Buffer[Torque_Delta_Data.Delta_Index] = tmp_delta;
+            Torque_Delta_Data.Delta_Sum += tmp_delta;
+        }
+
+        Torque_Delta_Data.Delta_Index++;
+        if (Torque_Delta_Data.Delta_Index >= 4)
+        {
+            Torque_Delta_Data.Delta_Index = 0;
+        }
+
+        Torque_Delta_Data.Delta_Mean = Torque_Delta_Data.Delta_Sum / (float)Torque_Delta_Data.Delta_Count;
+
+        if (Torque_Delta_Data.Delta_Count >= 4)
+        {
+            if (Torque_Delta_Data.Delta_Mean >= Enable_Delta_Threshold)
+            {
+                if (Enable_Confirm_Count < 2)
+                {
+                    Enable_Confirm_Count++;
+                }
+                if (Enable_Confirm_Count >= 2)
+                {
+                    Enable_Confirmed = 1;
+                }
+            }
+            else
+            {
+                Enable_Confirm_Count = 0;
+            }
+        }
     }
 }
 

@@ -34,7 +34,7 @@ enum Enum_AK_Motor_Status
 };
 
 /**
- * @brief AK电机的ID枚举类型
+ * @brief AK电机ID
  *
  */
 enum Enum_AK_Motor_ID : uint8_t
@@ -88,7 +88,7 @@ enum Enum_AK_Motor_Control_Method
 };
 
 /**
- * @brief AK电机经过处理后的数据
+ * @brief AK电机处理后的数据
  *
  */
 struct Struct_AK_Motor_Rx_Data
@@ -105,6 +105,21 @@ struct Struct_AK_Motor_Rx_Data
 };
 
 /**
+ * @brief AK电机扭矩差分统计数据
+ *
+ */
+struct Struct_AK_Motor_Torque_Delta_Data
+{
+    uint8_t Valid_Flag;
+    float Pre_Now_Torque;
+    float Delta_Buffer[4];
+    uint8_t Delta_Index;
+    uint8_t Delta_Count;
+    float Delta_Sum;
+    float Delta_Mean;
+};
+
+/**
  * @brief AK80-6无刷电机
  *
  */
@@ -115,7 +130,7 @@ public:
     Class_PID PID_Angle;
     // PID角速度环控制
     Class_PID PID_Omega;
-    // 斜坡函数加减速速度X
+    // 斜坡函数加减速速度
     Class_Slope Slope_Joint_Angle;
 
     void Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN_ID, Enum_AK_Motor_Control_Method __Control_Method = AK_CONTROL_METHOD_MIT,
@@ -149,23 +164,23 @@ public:
     void Task_Alive_PeriodElapsedCallback();
     void Task_PID_PeriodElapsedCallback();
     void Task_Process_PeriodElapsedCallback();
+    void Clear_Torque_Delta_Data();
+    void Clear_Enable_Confirm();
 
 protected:
-    // 初始化相关变量
-
     // 绑定的CAN
     Struct_CAN_Manage_Object *CAN_Manage_Object = 0;
-    // 收数据绑定的CAN ID
+    // 绑定的CAN ID
     Enum_AK_Motor_ID CAN_ID = AK_Motor_ID_0x01;
     // 发送缓冲区
     uint8_t *CAN_Tx_Data = 0;
     // 位置反馈偏移
     int32_t Position_Offset = 0;
-    // 位置最大值
+    // 角度最大值
     float Angle_Max = 12.5f;
-    // 最大速度
+    // 速度最大值
     float Omega_Max = 76.0f;
-    // 最大扭矩
+    // 扭矩最大值
     float Torque_Max = 12.0f;
 
     // 当前时刻的电机接收Flag
@@ -184,11 +199,18 @@ protected:
     Enum_AK_Motor_Control_Status Pre_AK_Motor_Control_Status = AK_Motor_Control_Status_DISABLE;
     // 电机控制方式
     Enum_AK_Motor_Control_Method AK_Motor_Control_Method = AK_CONTROL_METHOD_MIT;
-    // 上一拍的电机控制方式
+    // 使能确认标志
+    uint8_t Enable_Confirmed = 0;
+    // 使能确认计数
+    uint8_t Enable_Confirm_Count = 0;
+    // 扭矩差分统计数据
+    Struct_AK_Motor_Torque_Delta_Data Torque_Delta_Data = {0, 0.0f, {0.0f}, 0, 0, 0.0f, 0.0f};
+    // 使能确认阈值
+    float Enable_Delta_Threshold = 0.002f;
     // MIT的Kp值
-    float MIT_K_P = 12.0f;
+    float MIT_K_P = 0.0f;
     // MIT的Kd值
-    float MIT_K_D = 0.8f;
+    float MIT_K_D = 0.0f;
     // 目标角度
     float Target_Angle = 0.0f;
     // 目标速度
@@ -197,6 +219,7 @@ protected:
     float Target_Torque = 0.0f;
 
     void Data_Process(uint8_t *Rx_Data);
+    void Torque_Delta_Data_Process();
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -270,6 +293,22 @@ float Class_AK_Motor_80_6::get_Max_Omega()
 
 void Class_AK_Motor_80_6::Set_AK_Control_Status(Enum_AK_Motor_Control_Status __AK_Motor_Control_Status)
 {
+    if (AK_Motor_Control_Status == __AK_Motor_Control_Status)
+    {
+        return;
+    }
+
+    if ((AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE) && (__AK_Motor_Control_Status == AK_Motor_Control_Status_ENABLE))
+    {
+        Clear_Enable_Confirm();
+        Clear_Torque_Delta_Data();
+    }
+    else if ((AK_Motor_Control_Status == AK_Motor_Control_Status_ENABLE) && (__AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE))
+    {
+        Clear_Enable_Confirm();
+    }
+
+    Pre_AK_Motor_Control_Status = AK_Motor_Control_Status;
     AK_Motor_Control_Status = __AK_Motor_Control_Status;
 }
 
