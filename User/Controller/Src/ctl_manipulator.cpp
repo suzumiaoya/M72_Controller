@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #include "ctl_manipulator.h"
 
 #include "fdcan.h"

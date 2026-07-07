@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #include "alg_dh_model.h"
 
 void Class_DH_Model::Init()

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef ITA_CONTROLLER_H
 #define ITA_CONTROLLER_H
 

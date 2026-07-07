@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef DVC_UNITREE_MOTOR_H
 #define DVC_UNITREE_MOTOR_H
 

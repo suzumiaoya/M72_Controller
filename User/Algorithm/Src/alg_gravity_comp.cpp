@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #include "alg_gravity_comp.h"
 
 void Class_Gravity_Comp::Init()

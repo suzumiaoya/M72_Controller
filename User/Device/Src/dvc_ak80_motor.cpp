@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 /**
  * @file dvc_ak80_motor.cpp
  * @author hsl by suzumiaoya

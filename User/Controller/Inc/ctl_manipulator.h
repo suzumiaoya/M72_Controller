@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef CTL_MANIPULATOR_H
 #define CTL_MANIPULATOR_H
 

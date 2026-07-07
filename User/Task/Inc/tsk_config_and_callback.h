@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef TSK_CONFIG_AND_CALLBACK_H
 #define TSK_CONFIG_AND_CALLBACK_H
 

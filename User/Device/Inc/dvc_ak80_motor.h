@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef DVC_AK80_MOTOR_H
 #define DVC_AK80_MOTOR_H
 

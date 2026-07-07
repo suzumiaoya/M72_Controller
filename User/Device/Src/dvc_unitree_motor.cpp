@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 /**
  * @file dvc_unitree_motor.cpp
  * @brief Unitree GO-M8010-6 motor configuration and operation

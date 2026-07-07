@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef DVC_LCD_H
 #define DVC_LCD_H
 

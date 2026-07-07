@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef ALG_DH_MODEL_H
 #define ALG_DH_MODEL_H
 

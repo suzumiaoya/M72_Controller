@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #ifndef ALG_GRAVITY_COMP_H
 #define ALG_GRAVITY_COMP_H
 

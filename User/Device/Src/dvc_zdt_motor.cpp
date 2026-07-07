@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 #include "dvc_zdt_motor.h"
 
 #include "fdcan.h"
