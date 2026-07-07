@@ -30,7 +30,7 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
         Motor_J5.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J5].Device_ID);
     }
 
-    Motor_J0.Init(&UART5_Manage_Object, Joint_Binding[Controller_Joint_ID_J0].Device_ID);
+    Motor_J0.Init(&UART2_Manage_Object, Joint_Binding[Controller_Joint_ID_J0].Device_ID);
     Update_Current_State();
 }
 

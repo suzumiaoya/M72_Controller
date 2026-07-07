@@ -388,6 +388,7 @@ void Class_AK_Motor_80_6::Clear_Torque_Delta_Data()
     Torque_Delta_Data.Delta_Mean = 0.0f;
 }
 
+// 对电机返回的扭矩进行差分求均值，判断电机是否使能
 void Class_AK_Motor_80_6::Torque_Delta_Data_Process()
 {
     if (Torque_Delta_Data.Valid_Flag == 0)

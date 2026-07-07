@@ -72,7 +72,7 @@ extern "C" void Task_Init()
     CAN_Init(&hfdcan1, CAN1_Motor_Callback);
     CAN_Init(&hfdcan2, CAN2_Motor_Callback);
 
-    UART_Init(&huart5, RS485_Motor_Bus_Callback, 64);
+    UART_Init(&huart2, RS485_Motor_Bus_Callback, 64);
     UART_Init(&huart8, Peer_UART_Callback, 64);
     UART_Init(&huart10, Referee_UART_Callback, 64);
 

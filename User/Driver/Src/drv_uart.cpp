@@ -69,6 +69,13 @@ void UART_Init(UART_HandleTypeDef *huart, UART_Call_Back Callback_Function, uint
         UART1_Manage_Object.Rx_Buffer_Length = Rx_Buffer_Length;
         HAL_UARTEx_ReceiveToIdle_DMA(huart, UART1_Manage_Object.Rx_Buffer, UART1_Manage_Object.Rx_Buffer_Length);
     }
+    else if (huart->Instance == USART2)
+    {
+        UART2_Manage_Object.UART_Handler = huart;
+        UART2_Manage_Object.Callback_Function = Callback_Function;
+        UART2_Manage_Object.Rx_Buffer_Length = Rx_Buffer_Length;
+        HAL_UARTEx_ReceiveToIdle_DMA(huart, UART2_Manage_Object.Rx_Buffer, UART2_Manage_Object.Rx_Buffer_Length);
+    }
     else if (huart->Instance == UART5)
     {
         UART5_Manage_Object.UART_Handler = huart;

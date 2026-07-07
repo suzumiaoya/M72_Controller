@@ -20,6 +20,7 @@
 #include "main.h"
 #include "dma.h"
 #include "fdcan.h"
+#include "iwdg.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -68,7 +69,7 @@ void SystemClock_Config(void);
   * @retval int
   */
 int main(void)
-{	
+{
 
   /* USER CODE BEGIN 1 */
 
@@ -95,6 +96,7 @@ int main(void)
   MX_DMA_Init();
   MX_FDCAN1_Init();
   MX_FDCAN2_Init();
+  MX_FDCAN3_Init();
   MX_SPI2_Init();
   MX_TIM3_Init();
   MX_UART7_Init();
@@ -105,7 +107,8 @@ int main(void)
   MX_TIM4_Init();
   MX_UART8_Init();
   MX_UART9_Init();
-  //MX_IWDG1_Init();
+  MX_IWDG1_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   Task_Init();
   /* USER CODE END 2 */
@@ -144,11 +147,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_LSI
-                              |RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 2;
@@ -201,8 +202,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
