@@ -219,7 +219,7 @@ void Class_Unitree_Motor::UART_RxCpltCallback(uint8_t *Rx_Data, uint16_t Length)
 
 void Class_Unitree_Motor::TIM_Alive_PeriodElapsedCallback()
 {
-    if ((Flag == Pre_Flag) || (Data.Error_Status != Unitree_Motor_Error_Status_NONE))
+    if (Flag == Pre_Flag)
     {
         Unitree_Motor_Status = Unitree_Motor_Status_DISABLE;
     }

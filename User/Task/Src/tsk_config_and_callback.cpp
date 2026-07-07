@@ -6,6 +6,7 @@
 #include "drv_tim.h"
 #include "drv_uart.h"
 #include "dvc_dwt.h"
+#include "iwdg.h"
 
 Class_Controller controller;
 static uint8_t peer_rx_buffer[UART_BUFFER_SIZE];
@@ -21,9 +22,13 @@ void CAN2_Motor_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     controller.Right_Arm.CAN_RxCpltCallback(CAN_RxMessage);
 }
 
-void RS485_Motor_Bus_Callback(uint8_t *Buffer, uint16_t Length)
+void RS485_USART2_Motor_Bus_Callback(uint8_t *Buffer, uint16_t Length)
 {
     controller.Left_Arm.UART_RxCpltCallback(Buffer, Length);
+}
+
+void RS485_USART3_Motor_Bus_Callback(uint8_t *Buffer, uint16_t Length)
+{
     controller.Right_Arm.UART_RxCpltCallback(Buffer, Length);
 }
 
@@ -61,6 +66,7 @@ void Task1ms_TIM5_Callback()
         controller.Right_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
         controller.Referee.TIM1msMod50_Alive_PeriodElapsedCallback();
         controller.Referee.TIM_UART_Tx_PeriodElapsedCallback();
+        HAL_IWDG_Refresh(&hiwdg1);
         mod50 = 0;
     }
 }
@@ -72,8 +78,9 @@ extern "C" void Task_Init()
     CAN_Init(&hfdcan1, CAN1_Motor_Callback);
     CAN_Init(&hfdcan2, CAN2_Motor_Callback);
 
-    UART_Init(&huart2, RS485_Motor_Bus_Callback, 64);
-    UART_Init(&huart8, Peer_UART_Callback, 64);
+    UART_Init(&huart2, RS485_USART2_Motor_Bus_Callback, 16);
+    UART_Init(&huart3, RS485_USART3_Motor_Bus_Callback, 16);
+    UART_Init(&huart7, Peer_UART_Callback, 64);
     UART_Init(&huart10, Referee_UART_Callback, 64);
 
     SPI_Init(&hspi2, LCD_SPI_Callback);

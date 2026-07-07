@@ -31,11 +31,12 @@ enum Enum_Controller_Motor_Type
     Controller_Motor_Type_ZDT,
 };
 
-enum Enum_Controller_Bus_Type
+enum Enum_Bus_ID
 {
-    Controller_Bus_Type_RS485 = 0,
-    Controller_Bus_Type_CAN1,
-    Controller_Bus_Type_CAN2,
+    Bus_ID_RS485_USART2 = 0,
+    Bus_ID_RS485_USART3,
+    Bus_ID_CAN_1,
+    Bus_ID_CAN_2,
 };
 
 struct Struct_Joint_Limit
@@ -47,7 +48,7 @@ struct Struct_Joint_Limit
 struct Struct_Joint_Binding
 {
     Enum_Controller_Motor_Type Motor_Type;
-    Enum_Controller_Bus_Type Bus_Type;
+    Enum_Bus_ID Bus_ID;
     uint16_t Device_ID;
 };
 

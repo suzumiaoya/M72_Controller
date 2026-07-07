@@ -3,6 +3,44 @@
 #include "fdcan.h"
 #include "usart.h"
 
+static FDCAN_HandleTypeDef *Get_CAN_Handler(Enum_Bus_ID Bus_ID)
+{
+    switch (Bus_ID)
+    {
+        case (Bus_ID_CAN_1):
+        {
+            return (&hfdcan1);
+        }
+        case (Bus_ID_CAN_2):
+        {
+            return (&hfdcan2);
+        }
+        default:
+        {
+            return (0);
+        }
+    }
+}
+
+static Struct_UART_Manage_Object *Get_UART_Manage_Object(Enum_Bus_ID Bus_ID)
+{
+    switch (Bus_ID)
+    {
+        case (Bus_ID_RS485_USART2):
+        {
+            return (&UART2_Manage_Object);
+        }
+        case (Bus_ID_RS485_USART3):
+        {
+            return (&UART3_Manage_Object);
+        }
+        default:
+        {
+            return (0);
+        }
+    }
+}
+
 void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
 {
     Manipulator_ID = __Manipulator_ID;
@@ -11,26 +49,25 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
     {
         Joint_Limit = Left_Arm_Joint_Limit;
         Joint_Binding = Left_Arm_Joint_Binding;
-        
-        Motor_J1.Init(&hfdcan1, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J1].Device_ID));
-        Motor_J2.Init(&hfdcan1, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J2].Device_ID));
-        Motor_J3.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J3].Device_ID);
-        Motor_J4.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J4].Device_ID);
-        Motor_J5.Init(&hfdcan1, Joint_Binding[Controller_Joint_ID_J5].Device_ID);
     }
     else
     {
         Joint_Limit = Right_Arm_Joint_Limit;
         Joint_Binding = Right_Arm_Joint_Binding;
-
-        Motor_J1.Init(&hfdcan2, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J1].Device_ID));
-        Motor_J2.Init(&hfdcan2, static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J2].Device_ID));
-        Motor_J3.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J3].Device_ID);
-        Motor_J4.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J4].Device_ID);
-        Motor_J5.Init(&hfdcan2, Joint_Binding[Controller_Joint_ID_J5].Device_ID);
     }
 
-    Motor_J0.Init(&UART2_Manage_Object, Joint_Binding[Controller_Joint_ID_J0].Device_ID);
+    Motor_J0.Init(Get_UART_Manage_Object(Joint_Binding[Controller_Joint_ID_J0].Bus_ID),
+                  Joint_Binding[Controller_Joint_ID_J0].Device_ID);
+    Motor_J1.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J1].Bus_ID),
+                  static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J1].Device_ID));
+    Motor_J2.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J2].Bus_ID),
+                  static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J2].Device_ID));
+    Motor_J3.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J3].Bus_ID),
+                  Joint_Binding[Controller_Joint_ID_J3].Device_ID);
+    Motor_J4.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J4].Bus_ID),
+                  Joint_Binding[Controller_Joint_ID_J4].Device_ID);
+    Motor_J5.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J5].Bus_ID),
+                  Joint_Binding[Controller_Joint_ID_J5].Device_ID);
     Update_Current_State();
 }
 
