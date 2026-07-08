@@ -13,6 +13,21 @@ Class_Controller controller;
 static uint8_t peer_rx_buffer[UART_BUFFER_SIZE];
 static uint16_t peer_rx_length = 0;
 
+static void Manipulator_CAN_Global_Filter_Init()
+{
+    HAL_FDCAN_ConfigGlobalFilter(&hfdcan1,
+                                 FDCAN_REJECT,
+                                 FDCAN_ACCEPT_IN_RX_FIFO0,
+                                 FDCAN_REJECT_REMOTE,
+                                 FDCAN_REJECT_REMOTE);
+
+    HAL_FDCAN_ConfigGlobalFilter(&hfdcan2,
+                                 FDCAN_REJECT,
+                                 FDCAN_ACCEPT_IN_RX_FIFO1,
+                                 FDCAN_REJECT_REMOTE,
+                                 FDCAN_REJECT_REMOTE);
+}
+
 void CAN1_Motor_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     controller.Left_Arm.CAN_RxCpltCallback(CAN_RxMessage);
@@ -76,6 +91,7 @@ extern "C" void Task_Init()
 {
     DWT_Init(480);
 
+    Manipulator_CAN_Global_Filter_Init();
     CAN_Init(&hfdcan1, CAN1_Motor_Callback);
     CAN_Init(&hfdcan2, CAN2_Motor_Callback);
 

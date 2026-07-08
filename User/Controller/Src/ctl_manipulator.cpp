@@ -142,17 +142,21 @@ void Class_Manipulator::CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     {
         Motor_J2.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
-    else if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J3].Device_ID)
+    // ZDT电机CAN接收回调
+    else if (CAN_RxMessage->Header.IdType == FDCAN_EXTENDED_ID &&
+        (CAN_RxMessage->Header.Identifier >> 8) == Joint_Binding[Controller_Joint_ID_J3].Device_ID)
     {
-        Motor_J3.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        Motor_J3.CAN_RxCpltCallback(CAN_RxMessage);
     }
-    else if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J4].Device_ID)
+    else if (CAN_RxMessage->Header.IdType == FDCAN_EXTENDED_ID &&
+        (CAN_RxMessage->Header.Identifier >> 8) == Joint_Binding[Controller_Joint_ID_J4].Device_ID)
     {
-        Motor_J4.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        Motor_J4.CAN_RxCpltCallback(CAN_RxMessage);
     }
-    else if (CAN_RxMessage->Header.Identifier == Joint_Binding[Controller_Joint_ID_J5].Device_ID)
+    else if (CAN_RxMessage->Header.IdType == FDCAN_EXTENDED_ID &&
+        (CAN_RxMessage->Header.Identifier >> 8) == Joint_Binding[Controller_Joint_ID_J5].Device_ID)
     {
-        Motor_J5.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        Motor_J5.CAN_RxCpltCallback(CAN_RxMessage);
     }
 }
 

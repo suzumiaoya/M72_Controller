@@ -110,6 +110,8 @@ void CAN_Init(FDCAN_HandleTypeDef *hcan, CAN_Call_Back Callback_Function);
 
 uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uint16_t Length);
 
+uint8_t CAN_Send_Extended_Data(FDCAN_HandleTypeDef *hcan, uint32_t ID, uint8_t *Data, uint16_t Length);
+
 void TIM_CAN_PeriodElapsedCallback();
 
 #ifdef __cplusplus
