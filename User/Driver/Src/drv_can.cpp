@@ -72,7 +72,6 @@ void can_filter_init(FDCAN_HandleTypeDef *hfdcan)
 //	HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_TX_COMPLETE, FDCAN_TX_BUFFER0);
 }
 
-
 /**
  * @brief 初始化CAN总线
  *
@@ -184,6 +183,15 @@ uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uin
 	return HAL_FDCAN_AddMessageToTxFifoQ(hcan, &pTxHeader, Data);	
 }
 
+/**
+ * @brief 发送拓展数据帧
+ *
+ * @param hcan CAN编号
+ * @param ID ID
+ * @param Data 被发送的数据指针
+ * @param Length 长度
+ * @return uint8_t 执行状态
+ */
 uint8_t CAN_Send_Extended_Data(FDCAN_HandleTypeDef *hcan, uint32_t ID, uint8_t *Data, uint16_t Length)
 {
     FDCAN_TxHeaderTypeDef pTxHeader;
