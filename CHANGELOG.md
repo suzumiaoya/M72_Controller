@@ -14,15 +14,20 @@
 ### 新增
 - [Docs] 新增 CHANGELOG 文件，并建立中文变更记录模板。
 - [Docs] README 新增仓库电机驱动说明，并补充张大头步进电机驱动文档。
+- [Device] 新增 ST7789 LCD 驱动、紧凑英文字符集和双机械臂状态页，支持整数及两位小数浮点显示并完成实机验证。
+- [Core] 新增 SPI1 TX-only、DMA2 Stream0、LCD 控制 GPIO 和低优先级 SPI/DMA 中断配置。
+- [Docs] README 新增 LCD 接线、CubeMX 配置、初始化边界和异步刷新接口说明。
 
 ### 变更
 - [Docs] 调整 README 中 ZDT 电机总览描述，明确为力矩环与 EmmX CAN 扩展帧协议。
+- [Task] LCD 状态数据改为每 100 ms 在任务态提交，运行期由 DMA 状态机重绘变化字段，TIM5 中断不执行 SPI 传输。
+- [Device] LCD 源文件补充与现有设备驱动一致的文件头、模块分区和公开接口注释。
 
 ### 修复
 - 暂无
 
 ### 移除
-- 暂无
+- [Core] 暂停使用 IWDG1，移除 CubeMX 外设启用项、启动初始化调用和 50 ms 周期喂狗逻辑。
 
 ## 2026-07-08
 

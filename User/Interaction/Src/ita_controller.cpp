@@ -9,5 +9,5 @@ void Class_Controller::Init()
     Right_Arm.Init(Manipulator_ID_RIGHT);
 
     Referee.Init(&huart10);
-    LCD.Init(&hspi2);
+    LCD.Init(&hspi1);
 }

@@ -34,6 +34,51 @@
 * 驱动的周期逻辑集中在 `TIM_Process_PeriodElapsedCallback()` 和 `TIM_Alive_PeriodElapsedCallback()` 中：前者负责使能/失能边沿指令、三种控制指令发送、位置查询以及可选的电流查询，后者通过查询回包更新电机在线状态。
 * 位置模式下发送的是相对位置增量命令，而不是绝对位置写入；位置反馈来自位置查询，速度反馈由相邻位置查询结果差分估算，力矩反馈由电流查询结果结合转矩常数换算得到，属于估算值。当前实现以项目所需功能为主，不承诺已覆盖 `EmmX` 全部协议能力，新增协议功能前建议对照官方例程并结合实机验证。
 
+### LCD 屏幕驱动说明
+
+LCD 驱动位于 `User/Device/Inc/dvc_lcd.h` 和 `User/Device/Src/dvc_lcd.cpp`，参考 DM-MC02 的 LCD 例程适配 ST7789 控制器。当前使用竖屏 `240 x 280`、RGB565 色彩格式和 20 像素纵向偏移，已完成实机验证。
+
+#### 接线与外设配置
+
+| 信号 | STM32H723 引脚 | 配置 |
+| --- | --- | --- |
+| SCK | PB3 | SPI1_SCK |
+| MOSI | PD7 | SPI1_MOSI |
+| CS | PE15 | GPIO 推挽输出 |
+| BLK | PB10 | GPIO 推挽输出 |
+| RES | PB11 | GPIO 推挽输出 |
+| DC | PD10 | GPIO 推挽输出 |
+
+- SPI1 使用 TX-only 主机模式、8 位数据、CPOL High、第一边沿采样，实际速率为 `30 Mbit/s`。
+- SPI1_TX 使用 `DMA2 Stream0`，DMA2 Stream0 与 SPI1 中断抢占优先级均为 `3`，低于 TIM5 控制中断的优先级 `1`。
+- 当前工程未开启 D-Cache，LCD DMA 缓冲区位于 DMA 可访问的 AXI SRAM。后续若开启 D-Cache，需要在 DMA 启动前清理对应缓存行。
+- IWDG1 当前在 CubeMX 配置和任务代码中关闭；重新启用时需要同时恢复初始化与周期喂狗逻辑。
+
+#### 初始化与运行期刷新
+
+- `Class_Controller::Init()` 通过 `LCD.Init(&hspi1)` 初始化屏幕。复位、寄存器配置、清屏和启动页绘制使用阻塞发送，但发生在 TIM4/TIM5 启动之前，不占用运行期控制周期。
+- TIM5 的 1 ms 回调每 100 次只更新一次 LCD 刷新请求标记，不在中断中访问 SPI。
+- `Task_Loop()` 以 10 Hz 读取左右机械臂 J0-J5 当前角度，调用 `Submit_Status()` 覆盖待显示快照，并持续调用 `Refresh()` 推进 DMA 状态机。
+- `Refresh()` 每次最多启动一段 DMA 传输；DMA/SPI 回调只结束当前传输，不在中断中格式化文字或启动下一段数据。
+- 驱动比较格式化后的字段内容，仅重绘发生变化的数值区域。新状态到来时覆盖旧的待显示状态，不堆积历史帧。
+
+项目已完成默认状态页的数据提交。需要在其他任务中提交相同数据结构时，可使用以下调用方式：
+
+```cpp
+Struct_LCD_Status status = {};
+
+for (uint8_t joint = 0; joint < LCD_JOINT_COUNT; joint++)
+{
+    status.Current_Joint_Angle[0][joint] = controller.Left_Arm.Get_Current_Joint_Angle(joint);
+    status.Current_Joint_Angle[1][joint] = controller.Right_Arm.Get_Current_Joint_Angle(joint);
+}
+
+controller.LCD.Submit_Status(&status);
+controller.LCD.Refresh();
+```
+
+`Submit_Status()` 和 `Refresh()` 必须在任务态或主循环中调用。当前只实现页面 `0`，其他页码不会触发 LCD 总线传输；背光可通过 `Set_Backlight(0/1)` 控制。内置字符集覆盖状态页所需英文、数字和常用符号，小写英文会转换为大写显示，浮点数固定显示两位小数。
+
 ## License
 
 本仓库采用混合许可分发。

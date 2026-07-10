@@ -3,15 +3,14 @@
 
 #include "ita_controller.h"
 #include "drv_can.h"
-#include "drv_spi.h"
 #include "drv_tim.h"
 #include "drv_uart.h"
 #include "dvc_dwt.h"
-#include "iwdg.h"
 
 Class_Controller controller;
 static uint8_t peer_rx_buffer[UART_BUFFER_SIZE];
 static uint16_t peer_rx_length = 0;
+static volatile uint32_t lcd_refresh_generation = 0;
 
 static void Manipulator_CAN_Global_Filter_Init()
 {
@@ -59,11 +58,6 @@ void Peer_UART_Callback(uint8_t *Buffer, uint16_t Length)
     memcpy(peer_rx_buffer, Buffer, peer_rx_length);
 }
 
-void LCD_SPI_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Length)
-{
-    controller.LCD.SPI_RxCpltCallback(Tx_Buffer, Rx_Buffer, Length);
-}
-
 void Task100us_TIM4_Callback()
 {
 }
@@ -71,9 +65,17 @@ void Task100us_TIM4_Callback()
 void Task1ms_TIM5_Callback()
 {
     static uint8_t mod50 = 0;
+    static uint8_t mod100 = 0;
 
     controller.Left_Arm.TIM_Calculate_PeriodElapsedCallback();
     controller.Right_Arm.TIM_Calculate_PeriodElapsedCallback();
+
+    mod100++;
+    if (mod100 >= 100)
+    {
+        lcd_refresh_generation++;
+        mod100 = 0;
+    }
 
     mod50++;
     if (mod50 >= 50)
@@ -82,7 +84,6 @@ void Task1ms_TIM5_Callback()
         controller.Right_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
         controller.Referee.TIM1msMod50_Alive_PeriodElapsedCallback();
         controller.Referee.TIM_UART_Tx_PeriodElapsedCallback();
-        HAL_IWDG_Refresh(&hiwdg1);
         mod50 = 0;
     }
 }
@@ -100,8 +101,6 @@ extern "C" void Task_Init()
     UART_Init(&huart7, Peer_UART_Callback, 64);
     UART_Init(&huart10, Referee_UART_Callback, 64);
 
-    SPI_Init(&hspi2, LCD_SPI_Callback);
-
     TIM_Init(&htim4, Task100us_TIM4_Callback);
     TIM_Init(&htim5, Task1ms_TIM5_Callback);
 
@@ -113,5 +112,21 @@ extern "C" void Task_Init()
 
 extern "C" void Task_Loop()
 {
+    static uint32_t last_lcd_refresh_generation = 0;
+
+    if (last_lcd_refresh_generation != lcd_refresh_generation)
+    {
+        Struct_LCD_Status status = {};
+
+        last_lcd_refresh_generation = lcd_refresh_generation;
+        for (uint8_t joint = 0; joint < LCD_JOINT_COUNT; joint++)
+        {
+            status.Current_Joint_Angle[0][joint] = controller.Left_Arm.Get_Current_Joint_Angle(joint);
+            status.Current_Joint_Angle[1][joint] = controller.Right_Arm.Get_Current_Joint_Angle(joint);
+        }
+
+        controller.LCD.Submit_Status(&status);
+    }
+
     controller.LCD.Refresh();
 }

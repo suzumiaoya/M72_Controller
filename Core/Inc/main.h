@@ -69,6 +69,14 @@ void Error_Handler(void);
 #define INT1_GYRO_Pin GPIO_PIN_12
 #define INT1_GYRO_GPIO_Port GPIOE
 #define INT1_GYRO_EXTI_IRQn EXTI15_10_IRQn
+#define LCD_CS_Pin GPIO_PIN_15
+#define LCD_CS_GPIO_Port GPIOE
+#define LCD_BLK_Pin GPIO_PIN_10
+#define LCD_BLK_GPIO_Port GPIOB
+#define LCD_RES_Pin GPIO_PIN_11
+#define LCD_RES_GPIO_Port GPIOB
+#define LCD_DC_Pin GPIO_PIN_10
+#define LCD_DC_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 
