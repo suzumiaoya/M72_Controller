@@ -41,6 +41,14 @@ extern "C" {
  */
 typedef void (*SPI_Call_Back)(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Length);
 
+enum Enum_SPI_Event
+{
+    SPI_Event_TX_COMPLETE = 0,
+    SPI_Event_ERROR,
+};
+
+typedef void (*SPI_Event_Call_Back)(SPI_HandleTypeDef *SPI, Enum_SPI_Event Event, void *Context);
+
 /**
  * @brief CAN通信处理结构体
  *
@@ -55,6 +63,8 @@ struct Struct_SPI_Manage_Object
     uint16_t Now_Tx_Length;
     uint16_t Now_Rx_Length;
     SPI_Call_Back Callback_Function;
+    SPI_Event_Call_Back Event_Callback_Function;
+    void *Event_Callback_Context;
 };
 
 /* Exported variables ---------------------------------------------------------*/
@@ -74,6 +84,10 @@ extern uint8_t SPI5_PF6_Tx_Data[];
 /* Exported function declarations ---------------------------------------------*/
 
 void SPI_Init(SPI_HandleTypeDef *hspi, SPI_Call_Back Callback_Function);
+
+uint8_t SPI_Register_Event_Callback(SPI_HandleTypeDef *hspi,
+                                    SPI_Event_Call_Back Callback_Function,
+                                    void *Context);
 
 uint8_t SPI_Send_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint16_t Tx_Length, uint16_t Rx_Length);
 

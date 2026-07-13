@@ -116,17 +116,18 @@ extern "C" void Task_Loop()
 
     if (last_lcd_refresh_generation != lcd_refresh_generation)
     {
-        Struct_LCD_Status status = {};
+        Struct_LCD_Status_Page_Data status = {};
 
         last_lcd_refresh_generation = lcd_refresh_generation;
-        for (uint8_t joint = 0; joint < LCD_JOINT_COUNT; joint++)
+        for (uint8_t joint = 0; joint < CONTROLLER_JOINT_NUM; joint++)
         {
             status.Current_Joint_Angle[0][joint] = controller.Left_Arm.Get_Current_Joint_Angle(joint);
             status.Current_Joint_Angle[1][joint] = controller.Right_Arm.Get_Current_Joint_Angle(joint);
         }
 
-        controller.LCD.Submit_Status(&status);
+        controller.LCD_Status_Page.Submit_Status(&status);
     }
 
+    controller.LCD_Status_Page.Refresh();
     controller.LCD.Refresh();
 }

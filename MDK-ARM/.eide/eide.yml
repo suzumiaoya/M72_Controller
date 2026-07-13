@@ -19,6 +19,7 @@ virtualFolder:
     - name: Interaction
       files:
         - path: ../User/Interaction/Src/ita_controller.cpp
+        - path: ../User/Interaction/Src/ita_lcd_status.cpp
       folders: []
     - name: Device
       files:

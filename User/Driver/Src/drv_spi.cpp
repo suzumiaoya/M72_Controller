@@ -19,14 +19,47 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-Struct_SPI_Manage_Object SPI1_Manage_Object = {0};
-Struct_SPI_Manage_Object SPI2_Manage_Object = {0};
-Struct_SPI_Manage_Object SPI3_Manage_Object = {0};
-Struct_SPI_Manage_Object SPI4_Manage_Object = {0};
-Struct_SPI_Manage_Object SPI5_Manage_Object = {0};
-Struct_SPI_Manage_Object SPI6_Manage_Object = {0};
+Struct_SPI_Manage_Object SPI1_Manage_Object = {};
+Struct_SPI_Manage_Object SPI2_Manage_Object = {};
+Struct_SPI_Manage_Object SPI3_Manage_Object = {};
+Struct_SPI_Manage_Object SPI4_Manage_Object = {};
+Struct_SPI_Manage_Object SPI5_Manage_Object = {};
+Struct_SPI_Manage_Object SPI6_Manage_Object = {};
 
 /* Private function declarations ---------------------------------------------*/
+
+static Struct_SPI_Manage_Object *SPI_Get_Manage_Object(SPI_HandleTypeDef *hspi)
+{
+    if (hspi == 0)
+    {
+        return 0;
+    }
+    if (hspi->Instance == SPI1)
+    {
+        return &SPI1_Manage_Object;
+    }
+    if (hspi->Instance == SPI2)
+    {
+        return &SPI2_Manage_Object;
+    }
+    if (hspi->Instance == SPI3)
+    {
+        return &SPI3_Manage_Object;
+    }
+    if (hspi->Instance == SPI4)
+    {
+        return &SPI4_Manage_Object;
+    }
+    if (hspi->Instance == SPI5)
+    {
+        return &SPI5_Manage_Object;
+    }
+    if (hspi->Instance == SPI6)
+    {
+        return &SPI6_Manage_Object;
+    }
+    return 0;
+}
 
 /* Function prototypes -------------------------------------------------------*/
 
@@ -38,6 +71,11 @@ Struct_SPI_Manage_Object SPI6_Manage_Object = {0};
  */
 void SPI_Init(SPI_HandleTypeDef *hspi, SPI_Call_Back Callback_Function)
 {
+    if (hspi == 0)
+    {
+        return;
+    }
+
     if (hspi->Instance == SPI1)
     {
         SPI1_Manage_Object.SPI_Handler = hspi;
@@ -53,6 +91,23 @@ void SPI_Init(SPI_HandleTypeDef *hspi, SPI_Call_Back Callback_Function)
         SPI3_Manage_Object.SPI_Handler = hspi;
         SPI3_Manage_Object.Callback_Function = Callback_Function;
     }
+}
+
+uint8_t SPI_Register_Event_Callback(SPI_HandleTypeDef *hspi,
+                                    SPI_Event_Call_Back Callback_Function,
+                                    void *Context)
+{
+    Struct_SPI_Manage_Object *Manage_Object = SPI_Get_Manage_Object(hspi);
+
+    if ((Manage_Object == 0) || (Callback_Function == 0))
+    {
+        return 0U;
+    }
+
+    Manage_Object->SPI_Handler = hspi;
+    Manage_Object->Event_Callback_Function = Callback_Function;
+    Manage_Object->Event_Callback_Context = Context;
+    return 1U;
 }
 
 /**
@@ -125,21 +180,36 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     //选择回调函数
     if (hspi->Instance == SPI1)
     {
-        HAL_GPIO_TogglePin(SPI1_Manage_Object.Now_GPIOx, SPI1_Manage_Object.Now_GPIO_Pin);
-        
-        SPI1_Manage_Object.Callback_Function(SPI1_Manage_Object.Tx_Buffer, SPI1_Manage_Object.Rx_Buffer, SPI1_Manage_Object.Now_Tx_Length);
+        if (SPI1_Manage_Object.Now_GPIOx != 0)
+        {
+            HAL_GPIO_TogglePin(SPI1_Manage_Object.Now_GPIOx, SPI1_Manage_Object.Now_GPIO_Pin);
+        }
+        if (SPI1_Manage_Object.Callback_Function != 0)
+        {
+            SPI1_Manage_Object.Callback_Function(SPI1_Manage_Object.Tx_Buffer, SPI1_Manage_Object.Rx_Buffer, SPI1_Manage_Object.Now_Tx_Length);
+        }
     }
     else if (hspi->Instance == SPI2)
     {
-        HAL_GPIO_TogglePin(SPI2_Manage_Object.Now_GPIOx, SPI2_Manage_Object.Now_GPIO_Pin);
-        
-        SPI2_Manage_Object.Callback_Function(SPI2_Manage_Object.Tx_Buffer, SPI2_Manage_Object.Rx_Buffer, SPI2_Manage_Object.Now_Tx_Length);
+        if (SPI2_Manage_Object.Now_GPIOx != 0)
+        {
+            HAL_GPIO_TogglePin(SPI2_Manage_Object.Now_GPIOx, SPI2_Manage_Object.Now_GPIO_Pin);
+        }
+        if (SPI2_Manage_Object.Callback_Function != 0)
+        {
+            SPI2_Manage_Object.Callback_Function(SPI2_Manage_Object.Tx_Buffer, SPI2_Manage_Object.Rx_Buffer, SPI2_Manage_Object.Now_Tx_Length);
+        }
     }
     else if (hspi->Instance == SPI3)
     {
-        HAL_GPIO_TogglePin(SPI3_Manage_Object.Now_GPIOx, SPI3_Manage_Object.Now_GPIO_Pin);
-        
-        SPI3_Manage_Object.Callback_Function(SPI3_Manage_Object.Tx_Buffer, SPI3_Manage_Object.Rx_Buffer, SPI3_Manage_Object.Now_Tx_Length);
+        if (SPI3_Manage_Object.Now_GPIOx != 0)
+        {
+            HAL_GPIO_TogglePin(SPI3_Manage_Object.Now_GPIOx, SPI3_Manage_Object.Now_GPIO_Pin);
+        }
+        if (SPI3_Manage_Object.Callback_Function != 0)
+        {
+            SPI3_Manage_Object.Callback_Function(SPI3_Manage_Object.Tx_Buffer, SPI3_Manage_Object.Rx_Buffer, SPI3_Manage_Object.Now_Tx_Length);
+        }
     }
 //    else if (hspi->Instance == SPI4)
 //    {
@@ -159,6 +229,30 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 //        
 //        SPI6_Manage_Object.Callback_Function(SPI6_Manage_Object.Tx_Buffer, SPI6_Manage_Object.Rx_Buffer, SPI6_Manage_Object.Now_Tx_Length);
 //    }
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    Struct_SPI_Manage_Object *Manage_Object = SPI_Get_Manage_Object(hspi);
+
+    if ((Manage_Object != 0) && (Manage_Object->Event_Callback_Function != 0))
+    {
+        Manage_Object->Event_Callback_Function(hspi,
+                                               SPI_Event_TX_COMPLETE,
+                                               Manage_Object->Event_Callback_Context);
+    }
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+    Struct_SPI_Manage_Object *Manage_Object = SPI_Get_Manage_Object(hspi);
+
+    if ((Manage_Object != 0) && (Manage_Object->Event_Callback_Function != 0))
+    {
+        Manage_Object->Event_Callback_Function(hspi,
+                                               SPI_Event_ERROR,
+                                               Manage_Object->Event_Callback_Context);
+    }
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
