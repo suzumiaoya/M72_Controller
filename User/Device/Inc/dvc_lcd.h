@@ -76,14 +76,19 @@ struct Struct_LCD_Pin
     uint16_t Pin = 0;
 };
 
+// LCD初始化设置
 struct Struct_LCD_Config
 {
+    // GPIO口
     Struct_LCD_Pin CS;
     Struct_LCD_Pin DC;
     Struct_LCD_Pin RES;
     Struct_LCD_Pin BLK;
+    // 背光设置
     uint8_t Backlight_Active_High = 1U;
+    // 屏幕方向设置
     Enum_LCD_Rotation Rotation = LCD_Rotation_0;
+    // 倒转设置
     uint8_t Inversion = 1U;
 };
 

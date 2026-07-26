@@ -2,7 +2,7 @@
 /**
  * @file dvc_lcd.cpp
  * @author ZLLC
- * @brief DM LCD ST7789 initialization and asynchronous drawing
+ * @brief DM LCD ST7789 初始化与异步绘图LCD驱动
  * @version 0.2
  * @date 2026-07-13
  *
@@ -20,6 +20,7 @@
 
 /* Private macros and types --------------------------------------------------*/
 
+// 私有结构体与辅助函数
 namespace
 {
 constexpr uint32_t LCD_SPI_TIMEOUT = 1000U;

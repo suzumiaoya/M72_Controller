@@ -11,6 +11,7 @@ void Class_Controller::Init()
     Right_Arm.Init(Manipulator_ID_RIGHT);
 
     Referee.Init(&huart10);
+    
     LCD_Config.CS.Port = LCD_CS_GPIO_Port;
     LCD_Config.CS.Pin = LCD_CS_Pin;
     LCD_Config.DC.Port = LCD_DC_GPIO_Port;

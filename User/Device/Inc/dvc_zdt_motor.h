@@ -53,7 +53,7 @@ class Class_ZDT_Motor
 {
 public:
     void Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID = 0x0001,
-              Enum_ZDT_Motor_Control_Method __Control_Method = ZDT_Motor_Control_Method_POSITION_OMEGA,
+              Enum_ZDT_Motor_Control_Method __Control_Method = ZDT_Motor_Control_Method_TORQUE,
               float __Max_Torque = ZDT_MOTOR_DEFAULT_MAX_TORQUE,
               float __Max_Current = ZDT_MOTOR_DEFAULT_MAX_CURRENT,
               float __Max_Omega = ZDT_MOTOR_DEFAULT_MAX_OMEGA);

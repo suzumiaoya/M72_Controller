@@ -12,6 +12,7 @@ static uint8_t peer_rx_buffer[UART_BUFFER_SIZE];
 static uint16_t peer_rx_length = 0;
 static volatile uint32_t lcd_refresh_generation = 0;
 
+// 配置CAN总线过滤器，补全拓展帧设置用于接收ZDT电机数据
 static void Manipulator_CAN_Global_Filter_Init()
 {
     HAL_FDCAN_ConfigGlobalFilter(&hfdcan1,
@@ -27,21 +28,25 @@ static void Manipulator_CAN_Global_Filter_Init()
                                  FDCAN_REJECT_REMOTE);
 }
 
+// 左臂CAN1回调
 void CAN1_Motor_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     controller.Left_Arm.CAN_RxCpltCallback(CAN_RxMessage);
 }
 
+// 右臂CAN2回调
 void CAN2_Motor_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     controller.Right_Arm.CAN_RxCpltCallback(CAN_RxMessage);
 }
 
+// USART2回调，左臂RS485总线
 void RS485_USART2_Motor_Bus_Callback(uint8_t *Buffer, uint16_t Length)
 {
     controller.Left_Arm.UART_RxCpltCallback(Buffer, Length);
 }
 
+// USART3回调，右臂RS485总线
 void RS485_USART3_Motor_Bus_Callback(uint8_t *Buffer, uint16_t Length)
 {
     controller.Right_Arm.UART_RxCpltCallback(Buffer, Length);
@@ -73,6 +78,7 @@ void Task1ms_TIM5_Callback()
     mod100++;
     if (mod100 >= 100)
     {
+        // UI与LCD刷新
         lcd_refresh_generation++;
         mod100 = 0;
     }
@@ -80,6 +86,7 @@ void Task1ms_TIM5_Callback()
     mod50++;
     if (mod50 >= 50)
     {
+        // 存活检测回调
         controller.Left_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
         controller.Right_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
         controller.Referee.TIM1msMod50_Alive_PeriodElapsedCallback();
@@ -128,6 +135,8 @@ extern "C" void Task_Loop()
         controller.LCD_Status_Page.Submit_Status(&status);
     }
 
+    // 更新UI界面
     controller.LCD_Status_Page.Refresh();
+    // LCD刷新
     controller.LCD.Refresh();
 }
