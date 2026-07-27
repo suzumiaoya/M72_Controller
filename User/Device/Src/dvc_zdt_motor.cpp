@@ -26,7 +26,7 @@
 #define ZDT_MOTOR_RELATIVE_CURRENT_POS    (0x02U)
 #define ZDT_MOTOR_SYNC_DISABLE            (0x00U)
 
-#define ZDT_MOTOR_QUERY_PERIOD            (0.003f)
+#define ZDT_MOTOR_QUERY_PERIOD            (0.004f)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -110,11 +110,11 @@ void Class_ZDT_Motor::Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID,
     Target_Current_Ramp = ZDT_MOTOR_DEFAULT_CURRENT_RAMP;
 }
 
-void Class_ZDT_Motor::Send_Command(uint8_t *Command, uint16_t Length)
+uint8_t Class_ZDT_Motor::Send_Command(uint8_t *Command, uint16_t Length)
 {
     if ((CAN_Manage_Object == 0) || (CAN_Manage_Object->CAN_Handler == 0) || (Command == 0) || (Length < 3U))
     {
-        return;
+        return (uint8_t)HAL_ERROR;
     }
 
     uint8_t tmp_addr = Command[0];
@@ -122,6 +122,12 @@ void Class_ZDT_Motor::Send_Command(uint8_t *Command, uint16_t Length)
     uint8_t *tmp_payload = &Command[2];
     uint16_t tmp_payload_length = Length - 2U;
     uint32_t tmp_pack_index = 0U;
+    uint32_t tmp_pack_count = (tmp_payload_length + 6U) / 7U;
+
+    if (HAL_FDCAN_GetTxFifoFreeLevel(CAN_Manage_Object->CAN_Handler) < tmp_pack_count)
+    {
+        return (uint8_t)HAL_BUSY;
+    }
 
     while (tmp_payload_length > 0U)
     {
@@ -131,17 +137,23 @@ void Class_ZDT_Motor::Send_Command(uint8_t *Command, uint16_t Length)
         tmp_tx_data[0] = tmp_function;
         memcpy(&tmp_tx_data[1], tmp_payload, tmp_copy_length);
 
-        CAN_Send_Extended_Data(CAN_Manage_Object->CAN_Handler,
-                               ((static_cast<uint32_t>(tmp_addr) & 0xffU) << 8) | tmp_pack_index,
-                               tmp_tx_data, tmp_copy_length + 1U);
+        uint8_t tmp_status = CAN_Send_Extended_Data(CAN_Manage_Object->CAN_Handler,
+                                                    ((static_cast<uint32_t>(tmp_addr) & 0xffU) << 8) | tmp_pack_index,
+                                                    tmp_tx_data, tmp_copy_length + 1U);
+        if (tmp_status != (uint8_t)HAL_OK)
+        {
+            return tmp_status;
+        }
 
         tmp_payload += tmp_copy_length;
         tmp_payload_length -= tmp_copy_length;
         tmp_pack_index++;
     }
+
+    return (uint8_t)HAL_OK;
 }
 
-void Class_ZDT_Motor::Send_Enable_Command()
+uint8_t Class_ZDT_Motor::Send_Enable_Command()
 {
     uint8_t tmp_command[6] = {
         static_cast<uint8_t>(CAN_ID),
@@ -152,10 +164,10 @@ void Class_ZDT_Motor::Send_Enable_Command()
         ZDT_MOTOR_CHECKSUM,
     };
 
-    Send_Command(tmp_command, sizeof(tmp_command));
+    return Send_Command(tmp_command, sizeof(tmp_command));
 }
 
-void Class_ZDT_Motor::Send_Stop_Command()
+uint8_t Class_ZDT_Motor::Send_Stop_Command()
 {
     uint8_t tmp_command[5] = {
         static_cast<uint8_t>(CAN_ID),
@@ -165,10 +177,10 @@ void Class_ZDT_Motor::Send_Stop_Command()
         ZDT_MOTOR_CHECKSUM,
     };
 
-    Send_Command(tmp_command, sizeof(tmp_command));
+    return Send_Command(tmp_command, sizeof(tmp_command));
 }
 
-void Class_ZDT_Motor::Send_Position_Command()
+uint8_t Class_ZDT_Motor::Send_Position_Command()
 {
     float tmp_delta_angle = Target_Angle - Data.Now_Angle;
     float tmp_target_omega = Math_Abs(Target_Omega);
@@ -196,7 +208,7 @@ void Class_ZDT_Motor::Send_Position_Command()
             ZDT_MOTOR_CHECKSUM,
         };
 
-        Send_Command(tmp_command, sizeof(tmp_command));
+        return Send_Command(tmp_command, sizeof(tmp_command));
     }
     else
     {
@@ -217,11 +229,11 @@ void Class_ZDT_Motor::Send_Position_Command()
             ZDT_MOTOR_CHECKSUM,
         };
 
-        Send_Command(tmp_command, sizeof(tmp_command));
+        return Send_Command(tmp_command, sizeof(tmp_command));
     }
 }
 
-void Class_ZDT_Motor::Send_Omega_Command()
+uint8_t Class_ZDT_Motor::Send_Omega_Command()
 {
     float tmp_target_omega = Target_Omega;
     Math_Constrain(&tmp_target_omega, -Max_Omega, Max_Omega);
@@ -245,7 +257,7 @@ void Class_ZDT_Motor::Send_Omega_Command()
             ZDT_MOTOR_CHECKSUM,
         };
 
-        Send_Command(tmp_command, sizeof(tmp_command));
+        return Send_Command(tmp_command, sizeof(tmp_command));
     }
     else
     {
@@ -263,11 +275,11 @@ void Class_ZDT_Motor::Send_Omega_Command()
             ZDT_MOTOR_CHECKSUM,
         };
 
-        Send_Command(tmp_command, sizeof(tmp_command));
+        return Send_Command(tmp_command, sizeof(tmp_command));
     }
 }
 
-void Class_ZDT_Motor::Send_Torque_Command()
+uint8_t Class_ZDT_Motor::Send_Torque_Command()
 {
     float tmp_current = 0.0f;
 
@@ -295,10 +307,10 @@ void Class_ZDT_Motor::Send_Torque_Command()
         ZDT_MOTOR_CHECKSUM,
     };
 
-    Send_Command(tmp_command, sizeof(tmp_command));
+    return Send_Command(tmp_command, sizeof(tmp_command));
 }
 
-void Class_ZDT_Motor::Send_Position_Query_Command()
+uint8_t Class_ZDT_Motor::Send_Position_Query_Command()
 {
     uint8_t tmp_command[3] = {
         static_cast<uint8_t>(CAN_ID),
@@ -306,10 +318,10 @@ void Class_ZDT_Motor::Send_Position_Query_Command()
         ZDT_MOTOR_CHECKSUM,
     };
 
-    Send_Command(tmp_command, sizeof(tmp_command));
+    return Send_Command(tmp_command, sizeof(tmp_command));
 }
 
-void Class_ZDT_Motor::Send_Torque_Query_Command()
+uint8_t Class_ZDT_Motor::Send_Torque_Query_Command()
 {
     uint8_t tmp_command[3] = {
         static_cast<uint8_t>(CAN_ID),
@@ -317,7 +329,56 @@ void Class_ZDT_Motor::Send_Torque_Query_Command()
         ZDT_MOTOR_CHECKSUM,
     };
 
-    Send_Command(tmp_command, sizeof(tmp_command));
+    return Send_Command(tmp_command, sizeof(tmp_command));
+}
+
+uint8_t Class_ZDT_Motor::Send_Control_Command()
+{
+    if (ZDT_Motor_Control_Status != ZDT_Motor_Control_Status_ENABLE)
+    {
+        return (uint8_t)HAL_ERROR;
+    }
+
+    switch (ZDT_Motor_Control_Method)
+    {
+        case (ZDT_Motor_Control_Method_POSITION_OMEGA):
+        {
+            return Send_Position_Command();
+        }
+        case (ZDT_Motor_Control_Method_OMEGA):
+        {
+            return Send_Omega_Command();
+        }
+        case (ZDT_Motor_Control_Method_TORQUE):
+        {
+            return Send_Torque_Command();
+        }
+        default:
+        {
+            return (uint8_t)HAL_ERROR;
+        }
+    }
+}
+
+uint8_t Class_ZDT_Motor::Send_Control_Status_Command(Enum_ZDT_Motor_Control_Status __Control_Status)
+{
+    return (__Control_Status == ZDT_Motor_Control_Status_ENABLE) ?
+           Send_Enable_Command() : Send_Stop_Command();
+}
+
+uint8_t Class_ZDT_Motor::Send_Position_Query_Request()
+{
+    uint8_t tmp_status = Send_Position_Query_Command();
+    if (tmp_status == (uint8_t)HAL_OK)
+    {
+        Position_Query_Counter++;
+    }
+    return tmp_status;
+}
+
+uint8_t Class_ZDT_Motor::Send_Torque_Query_Request()
+{
+    return Send_Torque_Query_Command();
 }
 
 void Class_ZDT_Motor::Data_Process(const Struct_CAN_Rx_Buffer *CAN_RxMessage)
@@ -463,8 +524,7 @@ void Class_ZDT_Motor::TIM_Process_PeriodElapsedCallback()
         }
     }
 
-    Position_Query_Counter++;
-    Send_Position_Query_Command();
+    (void)Send_Position_Query_Request();
 
     if (Torque_Feedback_Enable != 0U)
     {

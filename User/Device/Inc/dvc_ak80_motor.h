@@ -165,6 +165,8 @@ public:
     void Task_Alive_PeriodElapsedCallback();
     void Task_PID_PeriodElapsedCallback();
     void Task_Process_PeriodElapsedCallback();
+    uint8_t Send_Control_Command();
+    uint8_t Send_Control_Status_Command(Enum_AK_Motor_Control_Status __Control_Status);
     void Clear_Torque_Delta_Data();
     void Clear_Enable_Confirm();
 

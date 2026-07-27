@@ -87,6 +87,10 @@ public:
     void CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage);
     void TIM_Alive_PeriodElapsedCallback();
     void TIM_Process_PeriodElapsedCallback();
+    uint8_t Send_Control_Command();
+    uint8_t Send_Control_Status_Command(Enum_ZDT_Motor_Control_Status __Control_Status);
+    uint8_t Send_Position_Query_Request();
+    uint8_t Send_Torque_Query_Request();
 
 protected:
     Struct_CAN_Manage_Object *CAN_Manage_Object = 0;
@@ -121,14 +125,14 @@ protected:
     float Target_Current_Ramp = ZDT_MOTOR_DEFAULT_CURRENT_RAMP;
 
     void Data_Process(const Struct_CAN_Rx_Buffer *CAN_RxMessage);
-    void Send_Command(uint8_t *Command, uint16_t Length);
-    void Send_Enable_Command();
-    void Send_Stop_Command();
-    void Send_Position_Command();
-    void Send_Omega_Command();
-    void Send_Torque_Command();
-    void Send_Position_Query_Command();
-    void Send_Torque_Query_Command();
+    uint8_t Send_Command(uint8_t *Command, uint16_t Length);
+    uint8_t Send_Enable_Command();
+    uint8_t Send_Stop_Command();
+    uint8_t Send_Position_Command();
+    uint8_t Send_Omega_Command();
+    uint8_t Send_Torque_Command();
+    uint8_t Send_Position_Query_Command();
+    uint8_t Send_Torque_Query_Command();
 };
 
 /* Exported variables --------------------------------------------------------*/

@@ -110,6 +110,7 @@ uint8_t Class_Unitree_Motor::Data_Process(uint8_t *Rx_Data)
 
     Data.Node_ID = tmp_node_id;
     Data.Working_Status = static_cast<Enum_Unitree_Motor_Working_Status>((Rx_Data[2] >> 4) & 0x07U);
+    Data.Now_Position = tmp_angle;
     Data.Now_Angle = (static_cast<float>(tmp_angle) / UNITREE_MOTOR_POSITION_SCALE) * (2.0f * PI) / Gear_Ratio;
     Data.Now_Omega = (static_cast<float>(tmp_omega) / UNITREE_MOTOR_OMEGA_SCALE) * (2.0f * PI) / Gear_Ratio;
     Data.Now_Torque = (static_cast<float>(tmp_torque) / UNITREE_MOTOR_TORQUE_SCALE) * Gear_Ratio;

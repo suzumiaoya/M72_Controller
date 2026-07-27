@@ -53,6 +53,7 @@ struct Struct_Unitree_Motor_Rx_Data
 {
     uint16_t Node_ID;
     Enum_Unitree_Motor_Working_Status Working_Status;
+    int32_t Now_Position;
     float Now_Angle;
     float Now_Omega;
     float Now_Torque;
@@ -101,7 +102,7 @@ protected:
     uint32_t Flag = 0;
     uint32_t Pre_Flag = 0;
 
-    Struct_Unitree_Motor_Rx_Data Data = {0, Unitree_Motor_Working_Status_LOCK, 0.0f, 0.0f, 0.0f, 0.0f, Unitree_Motor_Error_Status_NONE};
+    Struct_Unitree_Motor_Rx_Data Data = {0, Unitree_Motor_Working_Status_LOCK, 0, 0.0f, 0.0f, 0.0f, 0.0f, Unitree_Motor_Error_Status_NONE};
 
     float MIT_K_P = 0.0f;
     float MIT_K_D = 0.0f;

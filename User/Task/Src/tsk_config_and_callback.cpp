@@ -65,6 +65,22 @@ void Peer_UART_Callback(uint8_t *Buffer, uint16_t Length)
 
 void Task100us_TIM4_Callback()
 {
+    static uint8_t can_scheduler_phase = 0U;
+
+    if (can_scheduler_phase == 0U)
+    {
+        controller.Left_Arm.TIM_CAN_PeriodElapsedCallback();
+    }
+    else if (can_scheduler_phase == 2U)
+    {
+        controller.Right_Arm.TIM_CAN_PeriodElapsedCallback();
+    }
+
+    can_scheduler_phase++;
+    if (can_scheduler_phase >= 5U)
+    {
+        can_scheduler_phase = 0U;
+    }
 }
 
 void Task1ms_TIM5_Callback()

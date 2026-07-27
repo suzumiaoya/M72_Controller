@@ -43,6 +43,7 @@ public:
     void CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage);
     void UART_RxCpltCallback(uint8_t *Buffer, uint16_t Length);
     void TIM_Calculate_PeriodElapsedCallback();
+    void TIM_CAN_PeriodElapsedCallback();
     void TIM1msMod50_Alive_PeriodElapsedCallback();
 
 protected:
@@ -58,8 +59,27 @@ protected:
     float Current_Joint_Torque[CONTROLLER_JOINT_NUM] = {0.0f};
     float Target_Joint_Torque[CONTROLLER_JOINT_NUM] = {0.0f};
 
+    Enum_Manipulator_Control_Status CAN_Applied_Control_Status = Manipulator_Control_Status_DISABLE;
+    Enum_Manipulator_Control_Status CAN_Transition_Target = Manipulator_Control_Status_DISABLE;
+    uint8_t CAN_Transition_Active = 0U;
+    volatile uint8_t CAN_Transition_Joint = Controller_Joint_ID_J1;
+    volatile uint8_t CAN_Transition_Retry = 0U;
+    uint8_t CAN_Schedule_Slot = 0U;
+    uint8_t CAN_Superframe_Count = 0U;
+
+    volatile uint8_t CAN_Transaction_Pending = 0U;
+    volatile uint8_t CAN_Pending_Joint = 0U;
+    volatile uint8_t CAN_Pending_Function = 0xffU;
+    volatile uint8_t CAN_Pending_Is_Transition = 0U;
+    volatile uint8_t CAN_Response_Timeout_Count = 0U;
+
     void Output();
     void Update_Current_State();
+    void CAN_Set_Pending_Transaction(uint8_t Joint_ID, uint8_t Expected_Function, uint8_t Is_Transition);
+    void CAN_Complete_Pending_Transaction(uint8_t Joint_ID, uint8_t Response_Function);
+    void CAN_Advance_Schedule();
+    uint8_t CAN_Send_Transition_Request();
+    uint8_t CAN_Send_Scheduled_Request();
 };
 
 inline Enum_Manipulator_Control_Status Class_Manipulator::Get_Manipulator_Control_Status()

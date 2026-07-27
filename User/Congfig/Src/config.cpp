@@ -21,11 +21,13 @@ const Struct_Joint_Limit Right_Arm_Joint_Limit[CONTROLLER_JOINT_NUM] =
     {-1.570796f, 1.570796f},
 };
 
+// AK80电机由于结构安装时没按照CAN_ID顺序安装，所以这里反一下
+
 const Struct_Joint_Binding Left_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
 {
-    {Controller_Motor_Type_UNITREE, Bus_ID_RS485_USART2, 0x0000},
-    {Controller_Motor_Type_AK80, Bus_ID_CAN_1, 0x0001},
+    {Controller_Motor_Type_UNITREE, Bus_ID_RS485_USART3, 0x0000},
     {Controller_Motor_Type_AK80, Bus_ID_CAN_1, 0x0002},
+    {Controller_Motor_Type_AK80, Bus_ID_CAN_1, 0x0001},
     {Controller_Motor_Type_ZDT, Bus_ID_CAN_1, 0x0003},
     {Controller_Motor_Type_ZDT, Bus_ID_CAN_1, 0x0004},
     {Controller_Motor_Type_ZDT, Bus_ID_CAN_1, 0x0005},
@@ -33,9 +35,9 @@ const Struct_Joint_Binding Left_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
 
 const Struct_Joint_Binding Right_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
 {
-    {Controller_Motor_Type_UNITREE, Bus_ID_RS485_USART3, 0x0000},
-    {Controller_Motor_Type_AK80, Bus_ID_CAN_2, 0x0001},
+    {Controller_Motor_Type_UNITREE, Bus_ID_RS485_USART2, 0x0000},
     {Controller_Motor_Type_AK80, Bus_ID_CAN_2, 0x0002},
+    {Controller_Motor_Type_AK80, Bus_ID_CAN_2, 0x0001},
     {Controller_Motor_Type_ZDT, Bus_ID_CAN_2, 0x0003},
     {Controller_Motor_Type_ZDT, Bus_ID_CAN_2, 0x0004},
     {Controller_Motor_Type_ZDT, Bus_ID_CAN_2, 0x0005},
