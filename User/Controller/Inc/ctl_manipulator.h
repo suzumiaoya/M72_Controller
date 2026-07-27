@@ -49,6 +49,7 @@ public:
 protected:
     Enum_Manipulator_ID Manipulator_ID = Manipulator_ID_LEFT;
     const Struct_Joint_Limit *Joint_Limit = 0;
+    const Struct_Joint_Angle_Alignment *Joint_Angle_Alignment = 0;
     const Struct_Joint_Binding *Joint_Binding = 0;
     Class_DH_Model DH_Model;
     Class_Gravity_Comp Gravity_Comp;
@@ -75,6 +76,8 @@ protected:
 
     void Output();
     void Update_Current_State();
+    float Motor_Angle_To_Joint_Angle(uint8_t Joint_ID, float Motor_Angle);
+    float Joint_Angle_To_Motor_Angle(uint8_t Joint_ID, float Joint_Angle);
     void CAN_Set_Pending_Transaction(uint8_t Joint_ID, uint8_t Expected_Function, uint8_t Is_Transition);
     void CAN_Complete_Pending_Transaction(uint8_t Joint_ID, uint8_t Response_Function);
     void CAN_Advance_Schedule();

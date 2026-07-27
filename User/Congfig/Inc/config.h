@@ -40,12 +40,29 @@ enum Enum_Bus_ID
     Bus_ID_CAN_2,
 };
 
+// 电机转动方向到MDH关节方向的映射
+enum Enum_Joint_Angle_Direction
+{
+    Joint_Angle_Direction_SAME = 1,
+    Joint_Angle_Direction_INVERTED = -1,
+};
+
+// 关节限位
 struct Struct_Joint_Limit
 {
     float Min_Angle;
     float Max_Angle;
 };
 
+// 电机角度到MDH关节角度的对齐配置
+struct Struct_Joint_Angle_Alignment
+{
+    Enum_Joint_Angle_Direction Direction;
+    // 统一参考位姿下的电机反馈角度，单位rad
+    float Motor_Angle_At_Reference;
+};
+
+// 各关节电机通信配置
 struct Struct_Joint_Binding
 {
     Enum_Controller_Motor_Type Motor_Type;
@@ -55,6 +72,9 @@ struct Struct_Joint_Binding
 
 extern const Struct_Joint_Limit Left_Arm_Joint_Limit[CONTROLLER_JOINT_NUM];
 extern const Struct_Joint_Limit Right_Arm_Joint_Limit[CONTROLLER_JOINT_NUM];
+
+extern const Struct_Joint_Angle_Alignment Left_Arm_Joint_Alignment[CONTROLLER_JOINT_NUM];
+extern const Struct_Joint_Angle_Alignment Right_Arm_Joint_Alignment[CONTROLLER_JOINT_NUM];
 
 extern const Struct_Joint_Binding Left_Arm_Joint_Binding[CONTROLLER_JOINT_NUM];
 extern const Struct_Joint_Binding Right_Arm_Joint_Binding[CONTROLLER_JOINT_NUM];

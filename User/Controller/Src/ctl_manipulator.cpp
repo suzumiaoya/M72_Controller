@@ -57,11 +57,13 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
     if (Manipulator_ID == Manipulator_ID_LEFT)
     {
         Joint_Limit = Left_Arm_Joint_Limit;
+        Joint_Angle_Alignment = Left_Arm_Joint_Alignment;
         Joint_Binding = Left_Arm_Joint_Binding;
     }
     else
     {
         Joint_Limit = Right_Arm_Joint_Limit;
+        Joint_Angle_Alignment = Right_Arm_Joint_Alignment;
         Joint_Binding = Right_Arm_Joint_Binding;
     }
 
@@ -90,6 +92,29 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
     Update_Current_State();
 }
 
+// 统一参考位姿对应关节角0，关节正方向由MDH模型定义
+float Class_Manipulator::Motor_Angle_To_Joint_Angle(uint8_t Joint_ID, float Motor_Angle)
+{
+    if ((Joint_ID >= CONTROLLER_JOINT_NUM) || (Joint_Angle_Alignment == 0))
+    {
+        return (0.0f);
+    }
+
+    float tmp_direction = static_cast<float>(Joint_Angle_Alignment[Joint_ID].Direction);
+    return (tmp_direction * (Motor_Angle - Joint_Angle_Alignment[Joint_ID].Motor_Angle_At_Reference));
+}
+
+float Class_Manipulator::Joint_Angle_To_Motor_Angle(uint8_t Joint_ID, float Joint_Angle)
+{
+    if ((Joint_ID >= CONTROLLER_JOINT_NUM) || (Joint_Angle_Alignment == 0))
+    {
+        return (0.0f);
+    }
+
+    float tmp_direction = static_cast<float>(Joint_Angle_Alignment[Joint_ID].Direction);
+    return (Joint_Angle_Alignment[Joint_ID].Motor_Angle_At_Reference + tmp_direction * Joint_Angle);
+}
+
 void Class_Manipulator::Output()
 {
     if (Manipulator_Control_Status == Manipulator_Control_Status_DISABLE)
@@ -115,12 +140,18 @@ void Class_Manipulator::Output()
     Motor_J4.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_ENABLE);
     Motor_J5.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_ENABLE);
 
-    Motor_J0.Set_Target_Angle(Target_Joint_Angle[Controller_Joint_ID_J0]);
-    Motor_J1.Set_Target_Angle(Target_Joint_Angle[Controller_Joint_ID_J1]);
-    Motor_J2.Set_Target_Angle(Target_Joint_Angle[Controller_Joint_ID_J2]);
-    Motor_J3.Set_Target_Angle(Target_Joint_Angle[Controller_Joint_ID_J3]);
-    Motor_J4.Set_Target_Angle(Target_Joint_Angle[Controller_Joint_ID_J4]);
-    Motor_J5.Set_Target_Angle(Target_Joint_Angle[Controller_Joint_ID_J5]);
+    Motor_J0.Set_Target_Angle(
+        Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J0, Target_Joint_Angle[Controller_Joint_ID_J0]));
+    Motor_J1.Set_Target_Angle(
+        Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J1, Target_Joint_Angle[Controller_Joint_ID_J1]));
+    Motor_J2.Set_Target_Angle(
+        Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J2, Target_Joint_Angle[Controller_Joint_ID_J2]));
+    Motor_J3.Set_Target_Angle(
+        Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J3, Target_Joint_Angle[Controller_Joint_ID_J3]));
+    Motor_J4.Set_Target_Angle(
+        Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J4, Target_Joint_Angle[Controller_Joint_ID_J4]));
+    Motor_J5.Set_Target_Angle(
+        Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J5, Target_Joint_Angle[Controller_Joint_ID_J5]));
 
     Motor_J0.Set_Target_Torque(Target_Joint_Torque[Controller_Joint_ID_J0]);
     Motor_J1.Set_Target_Torque(Target_Joint_Torque[Controller_Joint_ID_J1]);
@@ -132,12 +163,18 @@ void Class_Manipulator::Output()
 
 void Class_Manipulator::Update_Current_State()
 {
-    Current_Joint_Angle[Controller_Joint_ID_J0] = Motor_J0.Get_Now_Angle();
-    Current_Joint_Angle[Controller_Joint_ID_J1] = Motor_J1.Get_Now_Angle();
-    Current_Joint_Angle[Controller_Joint_ID_J2] = Motor_J2.Get_Now_Angle();
-    Current_Joint_Angle[Controller_Joint_ID_J3] = Motor_J3.Get_Now_Angle();
-    Current_Joint_Angle[Controller_Joint_ID_J4] = Motor_J4.Get_Now_Angle();
-    Current_Joint_Angle[Controller_Joint_ID_J5] = Motor_J5.Get_Now_Angle();
+    Current_Joint_Angle[Controller_Joint_ID_J0] =
+        Motor_Angle_To_Joint_Angle(Controller_Joint_ID_J0, Motor_J0.Get_Now_Angle());
+    Current_Joint_Angle[Controller_Joint_ID_J1] =
+        Motor_Angle_To_Joint_Angle(Controller_Joint_ID_J1, Motor_J1.Get_Now_Angle());
+    Current_Joint_Angle[Controller_Joint_ID_J2] =
+        Motor_Angle_To_Joint_Angle(Controller_Joint_ID_J2, Motor_J2.Get_Now_Angle());
+    Current_Joint_Angle[Controller_Joint_ID_J3] =
+        Motor_Angle_To_Joint_Angle(Controller_Joint_ID_J3, Motor_J3.Get_Now_Angle());
+    Current_Joint_Angle[Controller_Joint_ID_J4] =
+        Motor_Angle_To_Joint_Angle(Controller_Joint_ID_J4, Motor_J4.Get_Now_Angle());
+    Current_Joint_Angle[Controller_Joint_ID_J5] =
+        Motor_Angle_To_Joint_Angle(Controller_Joint_ID_J5, Motor_J5.Get_Now_Angle());
 
     Current_Joint_Torque[Controller_Joint_ID_J0] = Motor_J0.Get_Now_Torque();
     Current_Joint_Torque[Controller_Joint_ID_J1] = Motor_J1.Get_Now_Torque();
