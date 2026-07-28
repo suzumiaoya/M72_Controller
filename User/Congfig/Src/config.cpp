@@ -5,7 +5,7 @@
 // 左右臂限位，此处为相对于mdh模型的限位，非相对于电机控制时的限位
 const Struct_Joint_Limit Left_Arm_Joint_Limit[CONTROLLER_JOINT_NUM] =
 {
-    {-1.134464f, 1.570796f},
+    {-1.570796f, 1.134464f},
     { 0.000000f, 1.570796f},
     {-1.570796f, 1.570796f},
     {-2.617994f, 2.617994f},
@@ -16,7 +16,7 @@ const Struct_Joint_Limit Left_Arm_Joint_Limit[CONTROLLER_JOINT_NUM] =
 const Struct_Joint_Limit Right_Arm_Joint_Limit[CONTROLLER_JOINT_NUM] =
 {
     {-1.134464f, 1.570796f},
-    { 0.000000f, 1.570796f},
+    {-1.570796f, 0.000000f},
     {-1.570796f, 1.570796f},
     {-2.617994f, 2.617994f},
     {-1.570796f, 1.570796f},
