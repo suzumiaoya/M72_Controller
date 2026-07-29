@@ -266,6 +266,53 @@ void Class_AK_Motor_80_6::Task_Alive_PeriodElapsedCallback()
         AK_Motor_Status = AK_Motor_Status_ENABLE;
     }
 
+    if (CAN_Manage_Object == 0)
+    {
+        Pre_Flag = Flag;
+        return;
+    }
+
+    switch (AK_Motor_Control_Method)
+    {
+    case (AK_CONTROL_METHOD_MIT):
+    {
+        switch (AK_Motor_Control_Status)
+        {
+        case (AK_Motor_Control_Status_DISABLE):
+        {
+            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Exit, 8);
+        }
+        break;
+        case (AK_Motor_Control_Status_ENABLE):
+        {
+            // 上升沿触发一次请求使能帧
+            if (Pre_AK_Motor_Control_Status != AK_Motor_Control_Status_ENABLE)
+            {
+                CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Enter, 8);
+                break;
+            }
+
+            // 在设置为使能状态下检测电机是否已经使能，若未使能则重发请求使能帧
+            if(Enable_Confirmed == 0)
+            {
+                CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, AK_Motor_CAN_Message_Enter, 8);
+            }
+        }
+        break;
+        default:
+        {
+        }
+        break;
+        }
+    }
+    break;
+    default:
+    {
+    }
+    break;
+    }
+
+    Pre_AK_Motor_Control_Status = AK_Motor_Control_Status;
     Pre_Flag = Flag;
 }
 
@@ -279,18 +326,13 @@ void Class_AK_Motor_80_6::Task_PID_PeriodElapsedCallback()
  */
 void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
 {
-    (void)Send_Control_Command();
-}
-
-uint8_t Class_AK_Motor_80_6::Send_Control_Command()
-{
     switch (AK_Motor_Control_Method)
     {
     case (AK_CONTROL_METHOD_MIT):
     {
         if ((AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE) || (CAN_Manage_Object == 0) || (CAN_Tx_Data == 0))
         {
-            return (uint8_t)HAL_ERROR;
+            break;
         }
 
         uint16_t tmp_position = Math_Float_To_Int(Target_Angle, -Angle_Max, Angle_Max, 0, (1 << 16) - 1);
@@ -320,7 +362,7 @@ uint8_t Class_AK_Motor_80_6::Send_Control_Command()
         uint8_t tmp_torque_7_0 = tmp_torque;
         memcpy(&CAN_Tx_Data[7], &tmp_torque_7_0, sizeof(uint8_t));
 
-        return CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8U);
+        CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8);
     }
     break;
     default:
@@ -328,20 +370,6 @@ uint8_t Class_AK_Motor_80_6::Send_Control_Command()
     }
     break;
     }
-
-    return (uint8_t)HAL_ERROR;
-}
-
-uint8_t Class_AK_Motor_80_6::Send_Control_Status_Command(Enum_AK_Motor_Control_Status __Control_Status)
-{
-    if ((CAN_Manage_Object == 0) || (CAN_Manage_Object->CAN_Handler == 0))
-    {
-        return (uint8_t)HAL_ERROR;
-    }
-
-    uint8_t *tmp_message = (__Control_Status == AK_Motor_Control_Status_ENABLE) ?
-                           AK_Motor_CAN_Message_Enter : AK_Motor_CAN_Message_Exit;
-    return CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, tmp_message, 8U);
 }
 
 void Class_AK_Motor_80_6::Clear_Enable_Confirm()

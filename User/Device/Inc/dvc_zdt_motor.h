@@ -11,12 +11,13 @@
 
 #include "drv_can.h"
 #include "drv_math.h"
+#include "alg_pid.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
-#define ZDT_MOTOR_DEFAULT_MAX_TORQUE  (0.43f)
-#define ZDT_MOTOR_DEFAULT_MAX_CURRENT (2.0f)
-#define ZDT_MOTOR_DEFAULT_MAX_OMEGA   (314.15927f)
+#define ZDT_MOTOR_DEFAULT_MAX_TORQUE   (0.43f)
+#define ZDT_MOTOR_DEFAULT_MAX_CURRENT  (2.0f)
+#define ZDT_MOTOR_DEFAULT_MAX_OMEGA    (314.15927f)
 #define ZDT_MOTOR_DEFAULT_CURRENT_RAMP (20000.0f)
 
 /* Exported types ------------------------------------------------------------*/
@@ -35,9 +36,16 @@ enum Enum_ZDT_Motor_Control_Status
 
 enum Enum_ZDT_Motor_Control_Method
 {
-    ZDT_Motor_Control_Method_POSITION_OMEGA = 0,
-    ZDT_Motor_Control_Method_OMEGA,
-    ZDT_Motor_Control_Method_TORQUE,
+    ZDT_Motor_Control_Method_TORQUE_MIT = 0,
+    ZDT_Motor_Control_Method_TORQUE_OMEGA,
+    ZDT_Motor_Control_Method_TORQUE_POSITION_OMEGA,
+};
+
+enum Enum_ZDT_Motor_Query_Type
+{
+    ZDT_Motor_Query_Type_CURRENT = 0x27,
+    ZDT_Motor_Query_Type_OMEGA = 0x35,
+    ZDT_Motor_Query_Type_POSITION = 0x36,
 };
 
 struct Struct_ZDT_Motor_Rx_Data
@@ -52,8 +60,11 @@ struct Struct_ZDT_Motor_Rx_Data
 class Class_ZDT_Motor
 {
 public:
+    Class_PID PID_Angle;
+    Class_PID PID_Omega;
+
     void Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID = 0x0001,
-              Enum_ZDT_Motor_Control_Method __Control_Method = ZDT_Motor_Control_Method_TORQUE,
+              Enum_ZDT_Motor_Control_Method __Control_Method = ZDT_Motor_Control_Method_TORQUE_MIT,
               float __Max_Torque = ZDT_MOTOR_DEFAULT_MAX_TORQUE,
               float __Max_Current = ZDT_MOTOR_DEFAULT_MAX_CURRENT,
               float __Max_Omega = ZDT_MOTOR_DEFAULT_MAX_OMEGA);
@@ -68,29 +79,27 @@ public:
     inline float Get_Target_Angle();
     inline float Get_Target_Omega();
     inline float Get_Target_Torque();
-    inline float Get_Target_Accel();
     inline float Get_Target_Current_Ramp();
+    inline float Get_MIT_K_P();
+    inline float Get_MIT_K_D();
     inline float Get_Max_Omega();
-    inline uint8_t Get_Torque_Feedback_Enable();
-    inline uint8_t Get_Torque_Feedback_Query_Divider();
 
     inline void Set_ZDT_Motor_Control_Status(Enum_ZDT_Motor_Control_Status __Control_Status);
     inline void Set_ZDT_Motor_Control_Method(Enum_ZDT_Motor_Control_Method __Control_Method);
     inline void Set_Target_Angle(float __Target_Angle);
     inline void Set_Target_Omega(float __Target_Omega);
     inline void Set_Target_Torque(float __Target_Torque);
-    inline void Set_Target_Accel(float __Target_Accel);
     inline void Set_Target_Current_Ramp(float __Target_Current_Ramp);
-    inline void Set_Torque_Feedback_Enable(uint8_t __Enable);
-    inline void Set_Torque_Feedback_Query_Divider(uint8_t __Query_Divider);
+    inline void Set_MIT_K_P(float __MIT_K_P);
+    inline void Set_MIT_K_D(float __MIT_K_D);
 
     void CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage);
     void TIM_Alive_PeriodElapsedCallback();
-    void TIM_Process_PeriodElapsedCallback();
+    void TIM_PID_PeriodElapsedCallback();
     uint8_t Send_Control_Command();
-    uint8_t Send_Control_Status_Command(Enum_ZDT_Motor_Control_Status __Control_Status);
-    uint8_t Send_Position_Query_Request();
-    uint8_t Send_Torque_Query_Request();
+    uint8_t Send_Position_Command();
+    void Send_Query_Command(Enum_ZDT_Motor_Query_Type Query_Type);
+    void Send_Timed_Query_Command(Enum_ZDT_Motor_Query_Type Query_Type, uint16_t Period_ms);
 
 protected:
     Struct_CAN_Manage_Object *CAN_Manage_Object = 0;
@@ -98,18 +107,14 @@ protected:
 
     Enum_ZDT_Motor_Status ZDT_Motor_Status = ZDT_Motor_Status_DISABLE;
     Enum_ZDT_Motor_Control_Status ZDT_Motor_Control_Status = ZDT_Motor_Control_Status_DISABLE;
-    Enum_ZDT_Motor_Control_Status Pre_ZDT_Motor_Control_Status = ZDT_Motor_Control_Status_DISABLE;
-    Enum_ZDT_Motor_Control_Method ZDT_Motor_Control_Method = ZDT_Motor_Control_Method_POSITION_OMEGA;
+    Enum_ZDT_Motor_Control_Method ZDT_Motor_Control_Method = ZDT_Motor_Control_Method_TORQUE_MIT;
+    Enum_ZDT_Motor_Control_Method Pre_ZDT_Motor_Control_Method = ZDT_Motor_Control_Method_TORQUE_MIT;
 
     uint32_t Flag = 0;
     uint32_t Pre_Flag = 0;
-    uint32_t Position_Query_Counter = 0;
-    uint32_t Last_Position_Query_Counter = 0;
     uint8_t Angle_Valid_Flag = 0;
-
-    uint8_t Torque_Feedback_Enable = 0;
-    uint8_t Torque_Feedback_Query_Divider = 1;
-    uint8_t Torque_Feedback_Query_Counter = 0;
+    uint8_t Omega_Valid_Flag = 0;
+    uint16_t Position_Feedback_Period_ms = 0;
 
     float Max_Torque = ZDT_MOTOR_DEFAULT_MAX_TORQUE;
     float Max_Current = ZDT_MOTOR_DEFAULT_MAX_CURRENT;
@@ -121,18 +126,14 @@ protected:
     float Target_Angle = 0.0f;
     float Target_Omega = 0.0f;
     float Target_Torque = 0.0f;
-    float Target_Accel = 0.0f;
     float Target_Current_Ramp = ZDT_MOTOR_DEFAULT_CURRENT_RAMP;
+    float MIT_K_P = 0.0f;
+    float MIT_K_D = 0.0f;
+    float Output_Torque = 0.0f;
 
     void Data_Process(const Struct_CAN_Rx_Buffer *CAN_RxMessage);
     uint8_t Send_Command(uint8_t *Command, uint16_t Length);
-    uint8_t Send_Enable_Command();
-    uint8_t Send_Stop_Command();
-    uint8_t Send_Position_Command();
-    uint8_t Send_Omega_Command();
-    uint8_t Send_Torque_Command();
-    uint8_t Send_Position_Query_Command();
-    uint8_t Send_Torque_Query_Command();
+    uint8_t Send_Torque_Command(float Torque);
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -189,14 +190,19 @@ inline float Class_ZDT_Motor::Get_Target_Torque()
     return (Target_Torque);
 }
 
-inline float Class_ZDT_Motor::Get_Target_Accel()
-{
-    return (Target_Accel);
-}
-
 inline float Class_ZDT_Motor::Get_Target_Current_Ramp()
 {
     return (Target_Current_Ramp);
+}
+
+inline float Class_ZDT_Motor::Get_MIT_K_P()
+{
+    return (MIT_K_P);
+}
+
+inline float Class_ZDT_Motor::Get_MIT_K_D()
+{
+    return (MIT_K_D);
 }
 
 inline float Class_ZDT_Motor::Get_Max_Omega()
@@ -204,24 +210,27 @@ inline float Class_ZDT_Motor::Get_Max_Omega()
     return (Max_Omega);
 }
 
-inline uint8_t Class_ZDT_Motor::Get_Torque_Feedback_Enable()
-{
-    return (Torque_Feedback_Enable);
-}
-
-inline uint8_t Class_ZDT_Motor::Get_Torque_Feedback_Query_Divider()
-{
-    return (Torque_Feedback_Query_Divider);
-}
-
 inline void Class_ZDT_Motor::Set_ZDT_Motor_Control_Status(Enum_ZDT_Motor_Control_Status __Control_Status)
 {
+    if (ZDT_Motor_Control_Status != __Control_Status)
+    {
+        PID_Angle.Set_Integral_Error(0.0f);
+        PID_Omega.Set_Integral_Error(0.0f);
+        Output_Torque = 0.0f;
+    }
     ZDT_Motor_Control_Status = __Control_Status;
 }
 
 inline void Class_ZDT_Motor::Set_ZDT_Motor_Control_Method(Enum_ZDT_Motor_Control_Method __Control_Method)
 {
+    if (ZDT_Motor_Control_Method != __Control_Method)
+    {
+        PID_Angle.Set_Integral_Error(0.0f);
+        PID_Omega.Set_Integral_Error(0.0f);
+        Output_Torque = 0.0f;
+    }
     ZDT_Motor_Control_Method = __Control_Method;
+    Pre_ZDT_Motor_Control_Method = __Control_Method;
 }
 
 inline void Class_ZDT_Motor::Set_Target_Angle(float __Target_Angle)
@@ -239,24 +248,19 @@ inline void Class_ZDT_Motor::Set_Target_Torque(float __Target_Torque)
     Target_Torque = __Target_Torque;
 }
 
-inline void Class_ZDT_Motor::Set_Target_Accel(float __Target_Accel)
-{
-    Target_Accel = __Target_Accel;
-}
-
 inline void Class_ZDT_Motor::Set_Target_Current_Ramp(float __Target_Current_Ramp)
 {
     Target_Current_Ramp = __Target_Current_Ramp;
 }
 
-inline void Class_ZDT_Motor::Set_Torque_Feedback_Enable(uint8_t __Enable)
+inline void Class_ZDT_Motor::Set_MIT_K_P(float __MIT_K_P)
 {
-    Torque_Feedback_Enable = (__Enable == 0U) ? 0U : 1U;
+    MIT_K_P = __MIT_K_P;
 }
 
-inline void Class_ZDT_Motor::Set_Torque_Feedback_Query_Divider(uint8_t __Query_Divider)
+inline void Class_ZDT_Motor::Set_MIT_K_D(float __MIT_K_D)
 {
-    Torque_Feedback_Query_Divider = (__Query_Divider == 0U) ? 1U : __Query_Divider;
+    MIT_K_D = __MIT_K_D;
 }
 
 #endif

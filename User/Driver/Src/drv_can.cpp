@@ -152,27 +152,34 @@ void CAN_Init(FDCAN_HandleTypeDef *hcan, CAN_Call_Back Callback_Function)
  */
 uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uint16_t Length)
 {
-    if ((hcan == 0) || (Data == 0) || (Length > 8U))
-    {
-        return (uint8_t)HAL_ERROR;
-    }
-
-    if (HAL_FDCAN_GetTxFifoFreeLevel(hcan) == 0U)
-    {
-        return (uint8_t)HAL_BUSY;
-    }
-
-    FDCAN_TxHeaderTypeDef pTxHeader = {0};
+    FDCAN_TxHeaderTypeDef pTxHeader;
     pTxHeader.Identifier=ID;
     pTxHeader.IdType=FDCAN_STANDARD_ID;
     pTxHeader.TxFrameType=FDCAN_DATA_FRAME;
-	pTxHeader.DataLength = Length;
+	
+	if(Length<=8)
+		pTxHeader.DataLength = Length;
+	if(Length==12)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_12;
+	if(Length==16)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_16;
+	if(Length==20)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_20;
+	if(Length==24)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_24;
+	if(Length==32)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_32;
+	if(Length==48)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_48;
+	if(Length==64)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_64;
 	
     pTxHeader.ErrorStateIndicator=FDCAN_ESI_ACTIVE;
     pTxHeader.BitRateSwitch=FDCAN_BRS_OFF;
     pTxHeader.FDFormat=FDCAN_CLASSIC_CAN;
     pTxHeader.TxEventFifoControl=FDCAN_NO_TX_EVENTS;
     pTxHeader.MessageMarker=0;
+    // if(HAL_FDCAN_GetTxFifoFreeLevel(hcan)!=0)
 	return HAL_FDCAN_AddMessageToTxFifoQ(hcan, &pTxHeader, Data);	
 }
 
@@ -187,21 +194,27 @@ uint8_t CAN_Send_Data(FDCAN_HandleTypeDef *hcan, uint16_t ID, uint8_t *Data, uin
  */
 uint8_t CAN_Send_Extended_Data(FDCAN_HandleTypeDef *hcan, uint32_t ID, uint8_t *Data, uint16_t Length)
 {
-    if ((hcan == 0) || (Data == 0) || (Length > 8U))
-    {
-        return (uint8_t)HAL_ERROR;
-    }
-
-    if (HAL_FDCAN_GetTxFifoFreeLevel(hcan) == 0U)
-    {
-        return (uint8_t)HAL_BUSY;
-    }
-
-    FDCAN_TxHeaderTypeDef pTxHeader = {0};
+    FDCAN_TxHeaderTypeDef pTxHeader;
     pTxHeader.Identifier=ID;
     pTxHeader.IdType=FDCAN_EXTENDED_ID;
     pTxHeader.TxFrameType=FDCAN_DATA_FRAME;
-	pTxHeader.DataLength = Length;
+
+	if(Length<=8)
+		pTxHeader.DataLength = Length;
+	if(Length==12)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_12;
+	if(Length==16)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_16;
+	if(Length==20)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_20;
+	if(Length==24)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_24;
+	if(Length==32)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_32;
+	if(Length==48)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_48;
+	if(Length==64)
+		pTxHeader.DataLength = FDCAN_DLC_BYTES_64;
 
     pTxHeader.ErrorStateIndicator=FDCAN_ESI_ACTIVE;
     pTxHeader.BitRateSwitch=FDCAN_BRS_OFF;

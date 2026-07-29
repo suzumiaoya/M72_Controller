@@ -31,13 +31,16 @@ public:
 
     inline Enum_Manipulator_Control_Status Get_Manipulator_Control_Status();
     inline float Get_Target_Joint_Angle(uint8_t Joint_ID);
+    inline float Get_Target_Joint_Omega(uint8_t Joint_ID);
     inline float Get_Current_Joint_Angle(uint8_t Joint_ID);
+    inline float Get_Current_Joint_Omega(uint8_t Joint_ID);
     inline float Get_Current_Joint_Torque(uint8_t Joint_ID);
     inline float Get_Target_Joint_Torque(uint8_t Joint_ID);
     inline Enum_Manipulator_ID Get_Manipulator_ID();
 
     inline void Set_Manipulator_Control_Status(Enum_Manipulator_Control_Status __Manipulator_Control_Status);
     inline void Set_Target_Joint_Angle(uint8_t Joint_ID, float __Target_Joint_Angle);
+    inline void Set_Target_Joint_Omega(uint8_t Joint_ID, float __Target_Joint_Omega);
     inline void Set_Target_Joint_Torque(uint8_t Joint_ID, float __Target_Joint_Torque);
 
     void CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage);
@@ -56,33 +59,22 @@ protected:
 
     Enum_Manipulator_Control_Status Manipulator_Control_Status = Manipulator_Control_Status_DISABLE;
     float Target_Joint_Angle[CONTROLLER_JOINT_NUM] = {0.0f};
+    float Target_Joint_Omega[CONTROLLER_JOINT_NUM] = {0.0f};
     float Current_Joint_Angle[CONTROLLER_JOINT_NUM] = {0.0f};
+    float Current_Joint_Omega[CONTROLLER_JOINT_NUM] = {0.0f};
     float Current_Joint_Torque[CONTROLLER_JOINT_NUM] = {0.0f};
     float Target_Joint_Torque[CONTROLLER_JOINT_NUM] = {0.0f};
 
-    Enum_Manipulator_Control_Status CAN_Applied_Control_Status = Manipulator_Control_Status_DISABLE;
-    Enum_Manipulator_Control_Status CAN_Transition_Target = Manipulator_Control_Status_DISABLE;
-    uint8_t CAN_Transition_Active = 0U;
-    volatile uint8_t CAN_Transition_Joint = Controller_Joint_ID_J1;
-    volatile uint8_t CAN_Transition_Retry = 0U;
     uint8_t CAN_Schedule_Slot = 0U;
-    uint8_t CAN_Superframe_Count = 0U;
-
-    volatile uint8_t CAN_Transaction_Pending = 0U;
-    volatile uint8_t CAN_Pending_Joint = 0U;
-    volatile uint8_t CAN_Pending_Function = 0xffU;
-    volatile uint8_t CAN_Pending_Is_Transition = 0U;
-    volatile uint8_t CAN_Response_Timeout_Count = 0U;
 
     void Output();
     void Update_Current_State();
     float Motor_Angle_To_Joint_Angle(uint8_t Joint_ID, float Motor_Angle);
     float Joint_Angle_To_Motor_Angle(uint8_t Joint_ID, float Joint_Angle);
-    void CAN_Set_Pending_Transaction(uint8_t Joint_ID, uint8_t Expected_Function, uint8_t Is_Transition);
-    void CAN_Complete_Pending_Transaction(uint8_t Joint_ID, uint8_t Response_Function);
-    void CAN_Advance_Schedule();
-    uint8_t CAN_Send_Transition_Request();
-    uint8_t CAN_Send_Scheduled_Request();
+    float Motor_Omega_To_Joint_Omega(uint8_t Joint_ID, float Motor_Omega);
+    float Joint_Omega_To_Motor_Omega(uint8_t Joint_ID, float Joint_Omega);
+    float Motor_Torque_To_Joint_Torque(uint8_t Joint_ID, float Motor_Torque);
+    float Joint_Torque_To_Motor_Torque(uint8_t Joint_ID, float Joint_Torque);
 };
 
 inline Enum_Manipulator_Control_Status Class_Manipulator::Get_Manipulator_Control_Status()
@@ -95,9 +87,19 @@ inline float Class_Manipulator::Get_Target_Joint_Angle(uint8_t Joint_ID)
     return (Joint_ID < CONTROLLER_JOINT_NUM ? Target_Joint_Angle[Joint_ID] : 0.0f);
 }
 
+inline float Class_Manipulator::Get_Target_Joint_Omega(uint8_t Joint_ID)
+{
+    return (Joint_ID < CONTROLLER_JOINT_NUM ? Target_Joint_Omega[Joint_ID] : 0.0f);
+}
+
 inline float Class_Manipulator::Get_Current_Joint_Angle(uint8_t Joint_ID)
 {
     return (Joint_ID < CONTROLLER_JOINT_NUM ? Current_Joint_Angle[Joint_ID] : 0.0f);
+}
+
+inline float Class_Manipulator::Get_Current_Joint_Omega(uint8_t Joint_ID)
+{
+    return (Joint_ID < CONTROLLER_JOINT_NUM ? Current_Joint_Omega[Joint_ID] : 0.0f);
 }
 
 inline float Class_Manipulator::Get_Current_Joint_Torque(uint8_t Joint_ID)
@@ -125,6 +127,14 @@ inline void Class_Manipulator::Set_Target_Joint_Angle(uint8_t Joint_ID, float __
     if (Joint_ID < CONTROLLER_JOINT_NUM)
     {
         Target_Joint_Angle[Joint_ID] = __Target_Joint_Angle;
+    }
+}
+
+inline void Class_Manipulator::Set_Target_Joint_Omega(uint8_t Joint_ID, float __Target_Joint_Omega)
+{
+    if (Joint_ID < CONTROLLER_JOINT_NUM)
+    {
+        Target_Joint_Omega[Joint_ID] = __Target_Joint_Omega;
     }
 }
 
