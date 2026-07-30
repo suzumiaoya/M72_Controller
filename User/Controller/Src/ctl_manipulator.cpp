@@ -166,12 +166,22 @@ void Class_Manipulator::Calculate_Model()
     Kinematics.Set_Joint_Angles(Current_Joint_Angle);
     Kinematics.Calculate();
 
-    Dynamics.Set_Joint_Angles(Current_Joint_Angle);
-    Dynamics.Calculate();
-
-    for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
+    if (Manipulator_ID == Manipulator_ID_LEFT)
     {
-        Gravity_Compensation_Torque[i] = Gravity_Compensation_Ratio[i] * Dynamics.Get_Gravity_Torque(i);
+        Dynamics.Set_Joint_Angles(Current_Joint_Angle);
+        Dynamics.Calculate();
+
+        for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
+        {
+            Gravity_Compensation_Torque[i] = Gravity_Compensation_Ratio[i] * Dynamics.Get_Gravity_Torque(i);
+        }
+    }
+    else
+    {
+        for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
+        {
+            Gravity_Compensation_Torque[i] = 0.0f;
+        }
     }
 }
 

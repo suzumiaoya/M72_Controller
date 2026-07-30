@@ -3,26 +3,21 @@
 #include <math.h>
 
 /**
- * @brief 各连杆惯性参数, 在该连杆自身的MDH帧下表达
+ * @brief 左臂各连杆惯性参数, 在对应连杆的MDH帧下表达
  *
- * 质量来源: Manipulator_Left.urdf的<inertial>, 但URDF中三个张大头ZDT电机的
- *          质量覆盖未被sw2urdf正确导出(Link3/4/5的整节质量低于其所含单个
- *          电机的标称值), 故按STL连通体体积识别出电机后, 用标称质量替换:
- *          L60 = 487g @ 103.99cm^3, L40 = 285g @ 70.01cm^3
- *          其余结构件(打印件+玻纤板)按1400 kg/m^3估算
- *          Link1/Link2的AK80质量原本正确, 未改动
- *
- * TODO 待实测修正: 机械师给出单侧臂(不含Unitree)约2.3kg, 此表对应2.64kg,
- *      相差15%。称一个L40和一个L60即可锁定, 只需改本表数值, 代码无需改动
+ * 质量和质心来源: Manipulator-Left.urdf的<inertial>, Link1依次对应MDH1,
+ * Link6对应MDH6. base不随机械臂关节运动, 不计入关节重力矩.
+ * URDF质心通过c_mdh = R_mdh^T * (p_com_base - p_mdh)转换到MDH帧,
+ * 表中保存质量m与一阶矩L = m*c_mdh.
  */
-static const Struct_Dynamics_Link_Param Dynamics_Link_Param[CONTROLLER_JOINT_NUM] =
+static const Struct_Dynamics_Link_Param Left_Dynamics_Link_Param[CONTROLLER_JOINT_NUM] =
 {
-    {0.6572444f, { 0.00104418f, -0.00463105f,  0.00671625f}},
-    {0.6020305f, { 0.06429749f,  0.00044138f,  0.02584005f}},
-    {0.6354614f, {-0.00000100f, -0.00915234f, -0.00646763f}},
-    {0.3401152f, { 0.00110941f,  0.01269233f, -0.00192894f}},
-    {0.4020753f, {-0.00169213f, -0.01922481f,  0.00119474f}},
-    {0.0017924f, { 0.00000659f, -0.00000008f,  0.00002045f}},
+    {0.758220778634767f, { 0.000756164398497296f, -0.00150616966659868f,  0.00792639613989271f}},
+    {0.614430000000000f, { 0.064502861400000000f,  0.000366180111593166f,  0.02344635304902510f}},
+    {0.616098841447018f, {-0.000001073984380438f, -0.00848852439977156f, -0.00448005996913223f}},
+    {0.355335860914443f, {-0.000088677662703699f,  0.01264007061927230f, -0.00187787984203345f}},
+    {0.370856186126271f, {-0.000216231031980213f, -0.01823554571865870f,  0.000815420234088653f}},
+    {0.003465972785661f, { 0.000000568495769010f, -0.000000150060768404f,  0.000039525461202507f}},
 };
 
 void Class_Dynamics::Init()
@@ -105,8 +100,8 @@ void Class_Dynamics::Calculate_Gravity_Term()
 
     for (int8_t i = CONTROLLER_JOINT_NUM - 1; i >= 0; i--)
     {
-        const float Mass = Dynamics_Link_Param[i].Mass;
-        const float *L = Dynamics_Link_Param[i].First_Moment;
+        const float Mass = Left_Dynamics_Link_Param[i].Mass;
+        const float *L = Left_Dynamics_Link_Param[i].First_Moment;
         const float *G = Local_Gravity[i];
 
         // 本连杆自身贡献: f = m*g, n = (m*c) x g
