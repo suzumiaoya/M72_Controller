@@ -609,8 +609,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\User\Algorithm\Src\alg_dh_model.cpp</PathWithFileName>
-      <FilenameWithoutPath>alg_dh_model.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\User\Algorithm\Src\alg_kinematics.cpp</PathWithFileName>
+      <FilenameWithoutPath>alg_kinematics.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -621,8 +621,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\User\Algorithm\Src\alg_gravity_comp.cpp</PathWithFileName>
-      <FilenameWithoutPath>alg_gravity_comp.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\User\Algorithm\Src\alg_dynamics.cpp</PathWithFileName>
+      <FilenameWithoutPath>alg_dynamics.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

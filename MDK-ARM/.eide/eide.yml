@@ -48,9 +48,9 @@ virtualFolder:
         - path: ../User/Algorithm/Src/alg_fsm.cpp
         - path: ../User/Algorithm/Src/alg_pid.cpp
         - path: ../User/Algorithm/Src/alg_SMC_Control.cpp
-        - path: ../User/Algorithm/Src/alg_dh_model.cpp
-        - path: ../User/Algorithm/Src/alg_gravity_comp.cpp
         - path: ../User/Algorithm/Src/alg_slope.cpp
+        - path: ../User/Algorithm/Src/alg_dynamics.cpp
+        - path: ../User/Algorithm/Src/alg_kinematics.cpp
       folders: []
     - name: Application
       files: []

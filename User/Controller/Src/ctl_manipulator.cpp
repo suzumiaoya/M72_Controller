@@ -75,6 +75,9 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
     Motor_J5.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J5].Bus_ID),
                   Joint_Binding[Controller_Joint_ID_J5].Device_ID);
 
+    Kinematics.Init();
+    Dynamics.Init();
+
     CAN_Schedule_Slot = 0U;
     Update_Current_State();
 
@@ -152,6 +155,26 @@ float Class_Manipulator::Joint_Torque_To_Motor_Torque(uint8_t Joint_ID, float Jo
     return (tmp_direction * Joint_Torque);
 }
 
+/**
+ * @brief 按当前关节角更新正运动学与重力补偿力矩
+ *
+ * 用Current_Joint_Angle而非Target_Joint_Angle: 重力矩取决于机械臂实际所处
+ * 位姿, 用目标角度在跟踪误差较大时会补偿到错误的构型上
+ */
+void Class_Manipulator::Calculate_Model()
+{
+    Kinematics.Set_Joint_Angles(Current_Joint_Angle);
+    Kinematics.Calculate();
+
+    Dynamics.Set_Joint_Angles(Current_Joint_Angle);
+    Dynamics.Calculate();
+
+    for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
+    {
+        Gravity_Compensation_Torque[i] = Gravity_Compensation_Ratio[i] * Dynamics.Get_Gravity_Torque(i);
+    }
+}
+
 void Class_Manipulator::Output()
 {
     if (Manipulator_Control_Status == Manipulator_Control_Status_DISABLE)
@@ -203,18 +226,31 @@ void Class_Manipulator::Output()
     Motor_J5.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J5, Target_Joint_Omega[Controller_Joint_ID_J5]));
 
+    // 重力补偿以前馈形式叠加, 不改动Target_Joint_Torque本身
     Motor_J0.Set_Target_Torque(
-        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J0, Target_Joint_Torque[Controller_Joint_ID_J0]));
+        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J0,
+                                     Target_Joint_Torque[Controller_Joint_ID_J0]
+                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J0]));
     Motor_J1.Set_Target_Torque(
-        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J1, Target_Joint_Torque[Controller_Joint_ID_J1]));
+        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J1,
+                                     Target_Joint_Torque[Controller_Joint_ID_J1]
+                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J1]));
     Motor_J2.Set_Target_Torque(
-        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J2, Target_Joint_Torque[Controller_Joint_ID_J2]));
+        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J2,
+                                     Target_Joint_Torque[Controller_Joint_ID_J2]
+                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J2]));
     Motor_J3.Set_Target_Torque(
-        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J3, Target_Joint_Torque[Controller_Joint_ID_J3]));
+        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J3,
+                                     Target_Joint_Torque[Controller_Joint_ID_J3]
+                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J3]));
     Motor_J4.Set_Target_Torque(
-        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J4, Target_Joint_Torque[Controller_Joint_ID_J4]));
+        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J4,
+                                     Target_Joint_Torque[Controller_Joint_ID_J4]
+                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J4]));
     Motor_J5.Set_Target_Torque(
-        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J5, Target_Joint_Torque[Controller_Joint_ID_J5]));
+        Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J5,
+                                     Target_Joint_Torque[Controller_Joint_ID_J5]
+                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J5]));
 }
 
 void Class_Manipulator::Update_Current_State()
@@ -300,6 +336,8 @@ void Class_Manipulator::UART_RxCpltCallback(uint8_t *Buffer, uint16_t Length)
 
 void Class_Manipulator::TIM_Calculate_PeriodElapsedCallback()
 {
+    Calculate_Model();
+
     Output();
 
     Motor_J0.TIM_Process_PeriodElapsedCallback();
