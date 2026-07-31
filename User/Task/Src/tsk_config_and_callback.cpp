@@ -77,7 +77,7 @@ void Task100us_TIM4_Callback()
     }
 
     can_scheduler_phase++;
-    if (can_scheduler_phase >= 5U)
+    if (can_scheduler_phase >= 4U)
     {
         can_scheduler_phase = 0U;
     }

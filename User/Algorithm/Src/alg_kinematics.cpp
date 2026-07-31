@@ -1,4 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+/**
+ * @file alg_kinematics.cpp
+ * @author hsl
+ * @brief 机械臂运动学算法
+ * @version 0.1
+ * @date 2025-07-31 0.1 27赛季定稿
+ *
+ * @copyright ZLLC 2027
+ *
+ */
 #include "alg_kinematics.h"
 #include <math.h>
 
@@ -23,7 +33,7 @@ void Class_Kinematics::Set_Joint_Angles(const float *__Joint_Angles, uint8_t __J
  *
  * A_i = Rx(alpha_i)*Tx(a_i)*Rz(theta_i + q_i)*Tz(d_i)
  */
-void Class_Kinematics::Calculate()
+void Class_Kinematics::Fkine()
 {
     float R[3][3] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
     float P[3] = {0.0f, 0.0f, 0.0f};

@@ -69,7 +69,9 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
     Motor_J2.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J2].Bus_ID),
                   static_cast<Enum_AK_Motor_ID>(Joint_Binding[Controller_Joint_ID_J2].Device_ID));
     Motor_J3.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J3].Bus_ID),
-                  Joint_Binding[Controller_Joint_ID_J3].Device_ID);
+                  Joint_Binding[Controller_Joint_ID_J3].Device_ID,
+                  ZDT_Motor_Control_Method_TORQUE_MIT,
+                  ZDT_L60_MAX_TORQUE);
     Motor_J4.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J4].Bus_ID),
                   Joint_Binding[Controller_Joint_ID_J4].Device_ID);
     Motor_J5.Init(Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J5].Bus_ID),
@@ -163,14 +165,17 @@ float Class_Manipulator::Joint_Torque_To_Motor_Torque(uint8_t Joint_ID, float Jo
  */
 void Class_Manipulator::Calculate_Model()
 {
+    // 运动学计算
     Kinematics.Set_Joint_Angles(Current_Joint_Angle);
-    Kinematics.Calculate();
+    Kinematics.Fkine();
 
+    // 动力学计算
     if (Manipulator_ID == Manipulator_ID_LEFT)
     {
         Dynamics.Set_Joint_Angles(Current_Joint_Angle);
         Dynamics.Calculate();
 
+        // 输出到重力补偿项
         for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
         {
             Gravity_Compensation_Torque[i] = Gravity_Compensation_Ratio[i] * Dynamics.Get_Gravity_Torque(i);
@@ -187,6 +192,7 @@ void Class_Manipulator::Calculate_Model()
 
 void Class_Manipulator::Output()
 {
+    // 失能模式
     if (Manipulator_Control_Status == Manipulator_Control_Status_DISABLE)
     {
         Motor_J0.Set_Unitree_Motor_Control_Status(Unitree_Motor_Control_Status_DISABLE);
@@ -197,6 +203,8 @@ void Class_Manipulator::Output()
         Motor_J5.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_DISABLE);
         return;
     }
+
+    // 非失能模式
 
     for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
     {
@@ -210,31 +218,45 @@ void Class_Manipulator::Output()
     Motor_J4.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_ENABLE);
     Motor_J5.Set_ZDT_Motor_Control_Status(ZDT_Motor_Control_Status_ENABLE);
 
+    // 电机层设置目标角度，角速度与力矩
     Motor_J0.Set_Target_Angle(
         Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J0, Target_Joint_Angle[Controller_Joint_ID_J0]));
+
     Motor_J1.Set_Target_Angle(
         Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J1, Target_Joint_Angle[Controller_Joint_ID_J1]));
+
     Motor_J2.Set_Target_Angle(
         Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J2, Target_Joint_Angle[Controller_Joint_ID_J2]));
+
     Motor_J3.Set_Target_Angle(
         Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J3, Target_Joint_Angle[Controller_Joint_ID_J3]));
+
     Motor_J4.Set_Target_Angle(
         Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J4, Target_Joint_Angle[Controller_Joint_ID_J4]));
+
     Motor_J5.Set_Target_Angle(
         Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J5, Target_Joint_Angle[Controller_Joint_ID_J5]));
 
+
+    // 角速度
     Motor_J0.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J0, Target_Joint_Omega[Controller_Joint_ID_J0]));
+
     Motor_J1.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J1, Target_Joint_Omega[Controller_Joint_ID_J1]));
+
     Motor_J2.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J2, Target_Joint_Omega[Controller_Joint_ID_J2]));
+
     Motor_J3.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J3, Target_Joint_Omega[Controller_Joint_ID_J3]));
+
     Motor_J4.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J4, Target_Joint_Omega[Controller_Joint_ID_J4]));
+
     Motor_J5.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J5, Target_Joint_Omega[Controller_Joint_ID_J5]));
+
 
     // 重力补偿以前馈形式叠加, 不改动Target_Joint_Torque本身
     Motor_J0.Set_Target_Torque(
@@ -399,19 +421,19 @@ void Class_Manipulator::TIM_CAN_PeriodElapsedCallback()
 
         case (5U):
         {
-            Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_CURRENT);
+            Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
         }
         break;
 
         case (6U):
         {
-            Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_CURRENT);
+            Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
         }
         break;
 
         case (7U):
         {
-            Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_CURRENT);
+            Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
         }
         break;
 

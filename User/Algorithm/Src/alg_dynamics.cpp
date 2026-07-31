@@ -50,7 +50,7 @@ void Class_Dynamics::Calculate()
 /**
  * @brief 重力项g(q), Newton-Euler递推
  *
- * 前向: 将基座系重力向量逐帧变换到各连杆帧, g_i = R_i^T * g_{i-1}
+ * 前向: 将基座系重力向量逐Frame变换到各连杆Frame, g_i = R_i^T * g_{i-1}
  * 反向: 累加力与力矩, tau_i取力矩的z分量(MDH中关节轴恒为z_i)
  *
  * 与sympybotics生成的g_func逐位一致(2000组随机构型残差为0)
@@ -58,13 +58,14 @@ void Class_Dynamics::Calculate()
  */
 void Class_Dynamics::Calculate_Gravity_Term()
 {
-    // 各连杆帧的旋转与平移, 及重力向量在各帧下的表达
+    // 各连杆Frame的旋转与平移, 及重力向量在各Frame下的表达
     float Rotation[CONTROLLER_JOINT_NUM][3][3];
     float Translation[CONTROLLER_JOINT_NUM][3];
     float Local_Gravity[CONTROLLER_JOINT_NUM][3];
 
     float Propagated[3] = {Gravity[0], Gravity[1], Gravity[2]};
 
+    // 向前运动学
     for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
     {
         const float Theta = MDH_Model[i].Theta + Joint_Angle[i];
@@ -74,16 +75,19 @@ void Class_Dynamics::Calculate_Gravity_Term()
         const float Sa = sinf(MDH_Model[i].Alpha);
 
         // A_i = Rx(alpha)*Tx(a)*Rz(theta)*Tz(d)
+        
+        // 旋转矩阵
         Rotation[i][0][0] =  Ct;      Rotation[i][0][1] = -St;      Rotation[i][0][2] = 0.0f;
         Rotation[i][1][0] =  St * Ca; Rotation[i][1][1] =  Ct * Ca; Rotation[i][1][2] = -Sa;
         Rotation[i][2][0] =  St * Sa; Rotation[i][2][1] =  Ct * Sa; Rotation[i][2][2] =  Ca;
 
+        // 平移矩阵
         Translation[i][0] =  MDH_Model[i].A;
         Translation[i][1] = -MDH_Model[i].D * Sa;
         Translation[i][2] =  MDH_Model[i].D * Ca;
 
         // g_i = R_i^T * g_{i-1}
-        float Local[3];
+        float Local[3];         // 本连杆Frame下重力向量
         for (uint8_t r = 0; r < 3; r++)
         {
             Local[r] = Rotation[i][0][r] * Propagated[0]
@@ -98,6 +102,7 @@ void Class_Dynamics::Calculate_Gravity_Term()
     float Force[3] = {0.0f, 0.0f, 0.0f};
     float Moment[3] = {0.0f, 0.0f, 0.0f};
 
+    // 向后动力学递推
     for (int8_t i = CONTROLLER_JOINT_NUM - 1; i >= 0; i--)
     {
         const float Mass = Left_Dynamics_Link_Param[i].Mass;
@@ -116,7 +121,7 @@ void Class_Dynamics::Calculate_Gravity_Term()
 
         if (i + 1 < CONTROLLER_JOINT_NUM)
         {
-            // 子连杆的力与力矩变换到本帧
+            // 子连杆的力与力矩变换到本Frame
             const uint8_t c = i + 1;
             float Child_Force[3];
             for (uint8_t r = 0; r < 3; r++)

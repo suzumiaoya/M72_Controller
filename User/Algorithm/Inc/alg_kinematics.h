@@ -16,7 +16,7 @@ class Class_Kinematics
 public:
     void Init();
     void Set_Joint_Angles(const float *__Joint_Angles, uint8_t __Joint_Num = CONTROLLER_JOINT_NUM);
-    void Calculate();
+    void Fkine();
 
     inline float Get_End_Effector_X();
     inline float Get_End_Effector_Y();

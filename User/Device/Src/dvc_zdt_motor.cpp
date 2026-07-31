@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "dvc_zdt_motor.h"
+#include "dvc_dwt.h"
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -69,7 +70,7 @@ void Class_ZDT_Motor::Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID,
     Max_Torque = Math_Abs(__Max_Torque);
     if (Max_Torque <= FLT_EPSILON)
     {
-        Max_Torque = ZDT_MOTOR_DEFAULT_MAX_TORQUE;
+        Max_Torque = ZDT_L40_MAX_TORQUE;
     }
 
     Max_Current = Math_Abs(__Max_Current);

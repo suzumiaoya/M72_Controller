@@ -15,10 +15,11 @@
 
 /* Exported macros -----------------------------------------------------------*/
 
-#define ZDT_MOTOR_DEFAULT_MAX_TORQUE   (0.43f)
-#define ZDT_MOTOR_DEFAULT_MAX_CURRENT  (2.0f)
-#define ZDT_MOTOR_DEFAULT_MAX_OMEGA    (314.15927f)
-#define ZDT_MOTOR_DEFAULT_CURRENT_RAMP (20000.0f)
+#define ZDT_L40_MAX_TORQUE              (0.43f)
+#define ZDT_L60_MAX_TORQUE              (0.7f)
+#define ZDT_MOTOR_DEFAULT_MAX_CURRENT   (2.0f)
+#define ZDT_MOTOR_DEFAULT_MAX_OMEGA     (314.15927f)
+#define ZDT_MOTOR_DEFAULT_CURRENT_RAMP  (20000.0f)
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -65,7 +66,7 @@ public:
 
     void Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID = 0x0001,
               Enum_ZDT_Motor_Control_Method __Control_Method = ZDT_Motor_Control_Method_TORQUE_MIT,
-              float __Max_Torque = ZDT_MOTOR_DEFAULT_MAX_TORQUE,
+              float __Max_Torque = ZDT_L40_MAX_TORQUE,
               float __Max_Current = ZDT_MOTOR_DEFAULT_MAX_CURRENT,
               float __Max_Omega = ZDT_MOTOR_DEFAULT_MAX_OMEGA);
 
@@ -116,10 +117,10 @@ protected:
     uint8_t Omega_Valid_Flag = 0;
     uint16_t Position_Feedback_Period_ms = 0;
 
-    float Max_Torque = ZDT_MOTOR_DEFAULT_MAX_TORQUE;
+    float Max_Torque = ZDT_L40_MAX_TORQUE;
     float Max_Current = ZDT_MOTOR_DEFAULT_MAX_CURRENT;
     float Max_Omega = ZDT_MOTOR_DEFAULT_MAX_OMEGA;
-    float Torque_Constant = ZDT_MOTOR_DEFAULT_MAX_TORQUE / ZDT_MOTOR_DEFAULT_MAX_CURRENT;
+    float Torque_Constant = ZDT_L40_MAX_TORQUE / ZDT_MOTOR_DEFAULT_MAX_CURRENT;
 
     Struct_ZDT_Motor_Rx_Data Data = {0x0001, 0.0f, 0.0f, 0.0f, 0.0f};
 
