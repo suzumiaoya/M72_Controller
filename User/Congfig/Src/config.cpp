@@ -68,6 +68,73 @@ const Struct_Joint_Binding Right_Arm_Joint_Binding[CONTROLLER_JOINT_NUM] =
 };
 
 // MDH运动学模型参数，来源见mdh_model.h
+const Struct_Dynamics_Link_Param Left_Dynamics_Link_Param[CONTROLLER_JOINT_NUM] =
+{
+    {0.758220778634767f, { 0.000756164398497296f, -0.00150616966659868f,  0.00792639613989271f}},
+    {0.614430000000000f, { 0.064502861400000000f,  0.000366180111593166f,  0.02344635304902510f}},
+    {0.616098841447018f, {-0.000001073984380438f, -0.00848852439977156f, -0.00448005996913223f}},
+    {0.355335860914443f, {-0.000088677662703699f,  0.01264007061927230f, -0.00187787984203345f}},
+    {0.370856186126271f, {-0.000216231031980213f, -0.01823554571865870f,  0.000815420234088653f}},
+    {0.003465972785661f, { 0.000000568495769010f, -0.000000150060768404f,  0.000039525461202507f}},
+};
+
+const Struct_Dynamics_Link_Param Right_Dynamics_Link_Param[CONTROLLER_JOINT_NUM] =
+{
+    {0.0f, {0.0f, 0.0f, 0.0f}},
+    {0.0f, {0.0f, 0.0f, 0.0f}},
+    {0.0f, {0.0f, 0.0f, 0.0f}},
+    {0.0f, {0.0f, 0.0f, 0.0f}},
+    {0.0f, {0.0f, 0.0f, 0.0f}},
+    {0.0f, {0.0f, 0.0f, 0.0f}},
+};
+
+const Struct_Static_Identify_Pose Static_Identify_Left_Pose[STATIC_IDENTIFY_POSE_COUNT] =
+{
+    {{-0.218166f, 0.785398f,  0.000000f,  0.000000f,  0.000000f,  0.000000f}},
+    {{-0.800000f, 0.450000f, -0.700000f, -1.100000f,  0.600000f,  0.500000f}},
+    {{ 0.350000f, 1.100000f,  0.650000f,  1.000000f, -0.650000f, -0.450000f}},
+    {{-0.650000f, 1.150000f,  0.450000f, -0.900000f, -0.500000f,  0.650000f}},
+    {{ 0.450000f, 0.400000f, -0.500000f,  1.100000f,  0.550000f, -0.600000f}},
+    {{-0.950000f, 0.850000f,  0.750000f,  0.650000f, -0.750000f,  0.300000f}},
+    {{ 0.150000f, 1.250000f, -0.750000f, -0.700000f,  0.700000f, -0.300000f}},
+    {{-0.450000f, 0.350000f,  0.850000f,  1.300000f, -0.350000f,  0.700000f}},
+    {{ 0.550000f, 0.950000f, -0.850000f, -1.300000f,  0.350000f, -0.700000f}},
+    {{-0.700000f, 1.220000f, -0.300000f,  0.400000f, -0.850000f,  0.450000f}},
+    {{ 0.250000f, 0.500000f,  0.300000f, -0.400000f,  0.850000f, -0.450000f}},
+    {{-0.218166f, 0.785398f,  0.000000f,  0.000000f,  0.000000f,  0.000000f}},
+};
+
+// Populate the right-arm excitation poses after its mass/COM seed is available.
+// The neutral placeholder keeps a config-only arm switch mechanically bounded.
+const Struct_Static_Identify_Pose Static_Identify_Right_Pose[STATIC_IDENTIFY_POSE_COUNT] =
+{
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+};
+
+volatile Struct_Static_Identify_Runtime Static_Identify_Runtime =
+{
+    0U,
+    0U,
+    {0.0f, 0.0f, 0.0f},
+    {0.0f, 0.0f, 0.0f},
+    0.30f,
+    4.00f,
+    0.0f,
+};
+
+volatile Struct_Static_Identify_Monitor Static_Identify_Monitor = {};
+
 const Struct_MDH_Link MDH_Model[MDH_JOINT_NUM] =
 {
     // Theta          D              A          Alpha

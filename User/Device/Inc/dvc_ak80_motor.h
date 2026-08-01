@@ -164,7 +164,7 @@ public:
     void CAN_RxCpltCallback(uint8_t *Rx_Data);
     void Task_Alive_PeriodElapsedCallback();
     void Task_PID_PeriodElapsedCallback();
-    void Task_Process_PeriodElapsedCallback();
+    uint8_t Task_Process_PeriodElapsedCallback();
     void Clear_Torque_Delta_Data();
     void Clear_Enable_Confirm();
 

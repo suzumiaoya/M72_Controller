@@ -65,21 +65,13 @@ void Peer_UART_Callback(uint8_t *Buffer, uint16_t Length)
 
 void Task100us_TIM4_Callback()
 {
-    static uint8_t can_scheduler_phase = 0U;
-
-    if (can_scheduler_phase == 0U)
+    if (Static_Identify_Active_Arm == Manipulator_ID_LEFT)
     {
         controller.Left_Arm.TIM_CAN_PeriodElapsedCallback();
     }
-    else if (can_scheduler_phase == 2U)
+    else
     {
         controller.Right_Arm.TIM_CAN_PeriodElapsedCallback();
-    }
-
-    can_scheduler_phase++;
-    if (can_scheduler_phase >= 4U)
-    {
-        can_scheduler_phase = 0U;
     }
 }
 
@@ -88,8 +80,14 @@ void Task1ms_TIM5_Callback()
     static uint8_t mod50 = 0;
     static uint8_t mod100 = 0;
 
-    controller.Left_Arm.TIM_Calculate_PeriodElapsedCallback();
-    controller.Right_Arm.TIM_Calculate_PeriodElapsedCallback();
+    if (Static_Identify_Active_Arm == Manipulator_ID_LEFT)
+    {
+        controller.Left_Arm.TIM_Calculate_PeriodElapsedCallback();
+    }
+    else
+    {
+        controller.Right_Arm.TIM_Calculate_PeriodElapsedCallback();
+    }
 
     mod100++;
     if (mod100 >= 100)
@@ -103,8 +101,14 @@ void Task1ms_TIM5_Callback()
     if (mod50 >= 50)
     {
         // 存活检测回调
-        controller.Left_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
-        controller.Right_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
+        if (Static_Identify_Active_Arm == Manipulator_ID_LEFT)
+        {
+            controller.Left_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
+        }
+        else
+        {
+            controller.Right_Arm.TIM1msMod50_Alive_PeriodElapsedCallback();
+        }
         controller.Referee.TIM1msMod50_Alive_PeriodElapsedCallback();
         controller.Referee.TIM_UART_Tx_PeriodElapsedCallback();
         mod50 = 0;

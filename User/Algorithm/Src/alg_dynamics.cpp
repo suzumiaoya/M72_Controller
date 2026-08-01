@@ -10,7 +10,8 @@
  * URDF质心通过c_mdh = R_mdh^T * (p_com_base - p_mdh)转换到MDH帧,
  * 表中保存质量m与一阶矩L = m*c_mdh.
  */
-static const Struct_Dynamics_Link_Param Left_Dynamics_Link_Param[CONTROLLER_JOINT_NUM] =
+#if 0
+static const Struct_Dynamics_Link_Param Legacy_Left_Dynamics_Link_Param[CONTROLLER_JOINT_NUM] =
 {
     {0.758220778634767f, { 0.000756164398497296f, -0.00150616966659868f,  0.00792639613989271f}},
     {0.614430000000000f, { 0.064502861400000000f,  0.000366180111593166f,  0.02344635304902510f}},
@@ -20,6 +21,8 @@ static const Struct_Dynamics_Link_Param Left_Dynamics_Link_Param[CONTROLLER_JOIN
     {0.003465972785661f, { 0.000000568495769010f, -0.000000150060768404f,  0.000039525461202507f}},
 };
 
+#endif
+
 void Class_Dynamics::Init()
 {
     memset(Joint_Angle, 0, sizeof(Joint_Angle));
@@ -27,6 +30,12 @@ void Class_Dynamics::Init()
     Gravity[0] = 0.0f;
     Gravity[1] = 0.0f;
     Gravity[2] = -9.81f;
+    Link_Params = 0;
+}
+
+void Class_Dynamics::Set_Link_Params(const Struct_Dynamics_Link_Param *__Link_Params)
+{
+    Link_Params = __Link_Params;
 }
 
 void Class_Dynamics::Set_Joint_Angles(const float *__Joint_Angles, uint8_t __Joint_Num)
@@ -58,6 +67,12 @@ void Class_Dynamics::Calculate()
  */
 void Class_Dynamics::Calculate_Gravity_Term()
 {
+    if (Link_Params == 0)
+    {
+        memset(Gravity_Torque, 0, sizeof(Gravity_Torque));
+        return;
+    }
+
     // 各连杆Frame的旋转与平移, 及重力向量在各Frame下的表达
     float Rotation[CONTROLLER_JOINT_NUM][3][3];
     float Translation[CONTROLLER_JOINT_NUM][3];
@@ -105,8 +120,8 @@ void Class_Dynamics::Calculate_Gravity_Term()
     // 向后动力学递推
     for (int8_t i = CONTROLLER_JOINT_NUM - 1; i >= 0; i--)
     {
-        const float Mass = Left_Dynamics_Link_Param[i].Mass;
-        const float *L = Left_Dynamics_Link_Param[i].First_Moment;
+        const float Mass = Link_Params[i].Mass;
+        const float *L = Link_Params[i].First_Moment;
         const float *G = Local_Gravity[i];
 
         // 本连杆自身贡献: f = m*g, n = (m*c) x g

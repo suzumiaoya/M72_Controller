@@ -324,7 +324,7 @@ void Class_AK_Motor_80_6::Task_PID_PeriodElapsedCallback()
  * @brief TIM定时器中断发送回调函数
  *
  */
-void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
+uint8_t Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
 {
     switch (AK_Motor_Control_Method)
     {
@@ -332,7 +332,7 @@ void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
     {
         if ((AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE) || (CAN_Manage_Object == 0) || (CAN_Tx_Data == 0))
         {
-            break;
+            return static_cast<uint8_t>(HAL_OK);
         }
 
         uint16_t tmp_position = Math_Float_To_Int(Target_Angle, -Angle_Max, Angle_Max, 0, (1 << 16) - 1);
@@ -362,7 +362,7 @@ void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
         uint8_t tmp_torque_7_0 = tmp_torque;
         memcpy(&CAN_Tx_Data[7], &tmp_torque_7_0, sizeof(uint8_t));
 
-        CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8);
+        return CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8);
     }
     break;
     default:
@@ -370,6 +370,8 @@ void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
     }
     break;
     }
+
+    return static_cast<uint8_t>(HAL_OK);
 }
 
 void Class_AK_Motor_80_6::Clear_Enable_Confirm()

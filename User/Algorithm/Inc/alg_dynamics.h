@@ -20,16 +20,21 @@
  */
 
 // 单连杆惯性参数, 均在该连杆自身的MDH帧下表达
+#ifndef STRUCT_DYNAMICS_LINK_PARAM_DEFINED
+#define STRUCT_DYNAMICS_LINK_PARAM_DEFINED
 struct Struct_Dynamics_Link_Param
 {
     float Mass;             // 连杆质量, kg
     float First_Moment[3];  // 一阶矩 m*c, kg*m
 };
 
+#endif
+
 class Class_Dynamics
 {
 public:
     void Init();
+    void Set_Link_Params(const Struct_Dynamics_Link_Param *__Link_Params);
     void Set_Joint_Angles(const float *__Joint_Angles, uint8_t __Joint_Num = CONTROLLER_JOINT_NUM);
     void Set_Gravity_Vector(float __Gx, float __Gy, float __Gz);
     void Calculate();
@@ -44,6 +49,7 @@ protected:
     // SolidWorks中base坐标系已按z轴负方向对齐重力, 故默认值即可用
     // 若后续接入IMU, 调用Set_Gravity_Vector()传入实测值
     float Gravity[3] = {0.0f, 0.0f, -9.81f};
+    const Struct_Dynamics_Link_Param *Link_Params = 0;
 
     void Calculate_Gravity_Term();
 };

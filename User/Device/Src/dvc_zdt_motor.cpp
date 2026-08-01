@@ -15,6 +15,9 @@
 #define ZDT_MOTOR_POSITION_COMMAND        (0xFBU)
 #define ZDT_MOTOR_POSITION_LIMIT_COMMAND  (0xCBU)
 #define ZDT_MOTOR_TIMED_QUERY_COMMAND     (0x11U)
+#define ZDT_EMMX_ENABLE_COMMAND            (0xF3U)
+#define ZDT_EMMX_ENABLE_AUX_CODE           (0xABU)
+#define ZDT_EMMX_POSITION_COMMAND          (0xFDU)
 
 #define ZDT_MOTOR_TIMED_QUERY_AUX_CODE    (0x18U)
 #define ZDT_MOTOR_CHECKSUM                (0x6BU)
@@ -35,6 +38,8 @@ static uint16_t ZDT_Motor_Omega_Radps_To_Raw(float Omega_Radps);
 static uint16_t ZDT_Motor_Current_Ramp_To_Raw(float Current_Ramp);
 static uint32_t ZDT_Motor_Position_Rad_To_Raw(float Position_Rad);
 static uint16_t ZDT_Motor_Torque_To_Current_mA(float Torque, float Torque_Constant, float Max_Current);
+static uint16_t ZDT_Motor_Omega_Radps_To_RPM(float Omega_Radps);
+static uint32_t ZDT_Motor_Position_Rad_To_Pulses(float Position_Rad, float Pulses_Per_Revolution);
 
 /* Function prototypes -------------------------------------------------------*/
 
@@ -58,6 +63,7 @@ void Class_ZDT_Motor::Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID,
     CAN_ID = __CAN_ID;
     ZDT_Motor_Status = ZDT_Motor_Status_DISABLE;
     ZDT_Motor_Control_Status = ZDT_Motor_Control_Status_DISABLE;
+    Pre_ZDT_Motor_Control_Status = ZDT_Motor_Control_Status_DISABLE;
     ZDT_Motor_Control_Method = __Control_Method;
     Pre_ZDT_Motor_Control_Method = __Control_Method;
 
@@ -66,6 +72,7 @@ void Class_ZDT_Motor::Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID,
     Angle_Valid_Flag = 0;
     Omega_Valid_Flag = 0;
     Position_Feedback_Period_ms = 0;
+    Emmx_Position_Command_Valid = 0U;
 
     Max_Torque = Math_Abs(__Max_Torque);
     if (Max_Torque <= FLT_EPSILON)
@@ -100,6 +107,11 @@ void Class_ZDT_Motor::Init(FDCAN_HandleTypeDef *hcan, uint16_t __CAN_ID,
     MIT_K_P = 0.0f;
     MIT_K_D = 0.0f;
     Output_Torque = 0.0f;
+    Emmx_Pulses_Per_Revolution = ZDT_EMMX_PULSES_PER_REVOLUTION;
+    Emmx_Max_RPM = ZDT_EMMX_MAX_RPM;
+    Emmx_Acceleration = ZDT_EMMX_DEFAULT_ACCELERATION;
+    Emmx_Default_RPM = ZDT_EMMX_DEFAULT_RPM;
+    Emmx_Last_Target_Angle = 0.0f;
 
     PID_Angle.Init(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, Max_Omega,
                    0.0f, 0.0f, 0.0f, ZDT_MOTOR_PID_PERIOD);
@@ -207,6 +219,82 @@ uint8_t Class_ZDT_Motor::Send_Position_Command()
     return Send_Command(tmp_command, sizeof(tmp_command));
 }
 
+uint8_t Class_ZDT_Motor::Send_Emmx_Enable_Command(uint8_t Enable)
+{
+    uint8_t tmp_command[6] = {
+        static_cast<uint8_t>(CAN_ID),
+        ZDT_EMMX_ENABLE_COMMAND,
+        ZDT_EMMX_ENABLE_AUX_CODE,
+        static_cast<uint8_t>(Enable != 0U),
+        ZDT_MOTOR_SYNC_DISABLE,
+        ZDT_MOTOR_CHECKSUM,
+    };
+
+    return Send_Command(tmp_command, sizeof(tmp_command));
+}
+
+uint8_t Class_ZDT_Motor::Send_Emmx_Position_Command()
+{
+    if (Angle_Valid_Flag == 0U)
+    {
+        return static_cast<uint8_t>(HAL_ERROR);
+    }
+
+    float tmp_pulse_resolution = Emmx_Pulses_Per_Revolution;
+    if (tmp_pulse_resolution <= FLT_EPSILON)
+    {
+        return static_cast<uint8_t>(HAL_ERROR);
+    }
+
+    float tmp_command_epsilon = PI / tmp_pulse_resolution;
+    if ((Emmx_Position_Command_Valid != 0U) &&
+        (Math_Abs(Target_Angle - Emmx_Last_Target_Angle) < tmp_command_epsilon))
+    {
+        return static_cast<uint8_t>(HAL_OK);
+    }
+
+    float tmp_delta_angle = Target_Angle - Data.Now_Angle;
+    uint8_t tmp_direction = tmp_delta_angle >= 0.0f ? 0U : 1U;
+    uint32_t tmp_pulses = ZDT_Motor_Position_Rad_To_Pulses(tmp_delta_angle, tmp_pulse_resolution);
+
+    float tmp_target_omega = Math_Abs(Target_Omega);
+    uint16_t tmp_rpm = tmp_target_omega <= FLT_EPSILON ? Emmx_Default_RPM :
+                       ZDT_Motor_Omega_Radps_To_RPM(tmp_target_omega);
+    if (tmp_rpm == 0U)
+    {
+        tmp_rpm = 1U;
+    }
+    if (tmp_rpm > Emmx_Max_RPM)
+    {
+        tmp_rpm = Emmx_Max_RPM;
+    }
+
+    uint8_t tmp_command[13] = {
+        static_cast<uint8_t>(CAN_ID),
+        ZDT_EMMX_POSITION_COMMAND,
+        tmp_direction,
+        static_cast<uint8_t>(tmp_rpm >> 8),
+        static_cast<uint8_t>(tmp_rpm),
+        Emmx_Acceleration,
+        static_cast<uint8_t>(tmp_pulses >> 24),
+        static_cast<uint8_t>(tmp_pulses >> 16),
+        static_cast<uint8_t>(tmp_pulses >> 8),
+        static_cast<uint8_t>(tmp_pulses),
+        ZDT_MOTOR_RELATIVE_CURRENT_POS,
+        ZDT_MOTOR_SYNC_DISABLE,
+        ZDT_MOTOR_CHECKSUM,
+    };
+
+    uint8_t tmp_status = Send_Command(tmp_command, sizeof(tmp_command));
+    if (tmp_status == static_cast<uint8_t>(HAL_OK))
+    {
+        Emmx_Last_Target_Angle = Target_Angle;
+        Emmx_Position_Command_Valid = 1U;
+    }
+
+    return tmp_status;
+}
+
 uint8_t Class_ZDT_Motor::Send_Torque_Command(float Torque)
 {
     float tmp_current = 0.0f;
@@ -240,6 +328,28 @@ uint8_t Class_ZDT_Motor::Send_Torque_Command(float Torque)
 
 uint8_t Class_ZDT_Motor::Send_Control_Command()
 {
+    if (ZDT_Motor_Control_Method == ZDT_Motor_Control_Method_EMMX_POSITION)
+    {
+        if (Pre_ZDT_Motor_Control_Status != ZDT_Motor_Control_Status)
+        {
+            uint8_t tmp_status = Send_Emmx_Enable_Command(
+                ZDT_Motor_Control_Status == ZDT_Motor_Control_Status_ENABLE ? 1U : 0U);
+            if (tmp_status == static_cast<uint8_t>(HAL_OK))
+            {
+                Pre_ZDT_Motor_Control_Status = ZDT_Motor_Control_Status;
+                Emmx_Position_Command_Valid = 0U;
+            }
+            return tmp_status;
+        }
+
+        if (ZDT_Motor_Control_Status == ZDT_Motor_Control_Status_DISABLE)
+        {
+            return static_cast<uint8_t>(HAL_OK);
+        }
+
+        return Send_Emmx_Position_Command();
+    }
+
     float tmp_output_torque = (ZDT_Motor_Control_Status == ZDT_Motor_Control_Status_ENABLE) ?
                               Output_Torque : 0.0f;
     return Send_Torque_Command(tmp_output_torque);
@@ -472,6 +582,12 @@ void Class_ZDT_Motor::TIM_PID_PeriodElapsedCallback()
         }
         break;
 
+        case (ZDT_Motor_Control_Method_EMMX_POSITION):
+        {
+            Output_Torque = 0.0f;
+        }
+        break;
+
         default:
         {
             Output_Torque = 0.0f;
@@ -558,6 +674,26 @@ static uint32_t ZDT_Motor_Position_Rad_To_Raw(float Position_Rad)
     }
 
     return (static_cast<uint32_t>(tmp_position + 0.5));
+}
+
+static uint16_t ZDT_Motor_Omega_Radps_To_RPM(float Omega_Radps)
+{
+    float tmp_rpm = Math_Abs(Omega_Radps / RPM_TO_RADPS);
+    Math_Constrain(&tmp_rpm, 0.0f, 65535.0f);
+    return static_cast<uint16_t>(tmp_rpm + 0.5f);
+}
+
+static uint32_t ZDT_Motor_Position_Rad_To_Pulses(float Position_Rad, float Pulses_Per_Revolution)
+{
+    double tmp_pulses = static_cast<double>(Math_Abs(Position_Rad)) *
+                        static_cast<double>(Pulses_Per_Revolution) / (2.0 * static_cast<double>(PI));
+
+    if (tmp_pulses > static_cast<double>(UINT32_MAX))
+    {
+        tmp_pulses = static_cast<double>(UINT32_MAX);
+    }
+
+    return static_cast<uint32_t>(tmp_pulses + 0.5);
 }
 
 static uint16_t ZDT_Motor_Torque_To_Current_mA(float Torque, float Torque_Constant, float Max_Current)

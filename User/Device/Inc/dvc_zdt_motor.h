@@ -20,6 +20,10 @@
 #define ZDT_MOTOR_DEFAULT_MAX_CURRENT   (2.0f)
 #define ZDT_MOTOR_DEFAULT_MAX_OMEGA     (314.15927f)
 #define ZDT_MOTOR_DEFAULT_CURRENT_RAMP  (20000.0f)
+#define ZDT_EMMX_PULSES_PER_REVOLUTION  (3200.0f)
+#define ZDT_EMMX_MAX_RPM                (5000U)
+#define ZDT_EMMX_DEFAULT_RPM            (100U)
+#define ZDT_EMMX_DEFAULT_ACCELERATION   (10U)
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -40,6 +44,7 @@ enum Enum_ZDT_Motor_Control_Method
     ZDT_Motor_Control_Method_TORQUE_MIT = 0,
     ZDT_Motor_Control_Method_TORQUE_OMEGA,
     ZDT_Motor_Control_Method_TORQUE_POSITION_OMEGA,
+    ZDT_Motor_Control_Method_EMMX_POSITION,
 };
 
 enum Enum_ZDT_Motor_Query_Type
@@ -84,6 +89,7 @@ public:
     inline float Get_MIT_K_P();
     inline float Get_MIT_K_D();
     inline float Get_Max_Omega();
+    inline uint8_t Get_Position_Feedback_Valid();
 
     inline void Set_ZDT_Motor_Control_Status(Enum_ZDT_Motor_Control_Status __Control_Status);
     inline void Set_ZDT_Motor_Control_Method(Enum_ZDT_Motor_Control_Method __Control_Method);
@@ -93,12 +99,15 @@ public:
     inline void Set_Target_Current_Ramp(float __Target_Current_Ramp);
     inline void Set_MIT_K_P(float __MIT_K_P);
     inline void Set_MIT_K_D(float __MIT_K_D);
+    inline void Set_Emmx_Position_Config(float __Pulses_Per_Revolution, uint16_t __Max_RPM,
+                                         uint8_t __Acceleration, uint16_t __Default_RPM);
 
     void CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage);
     void TIM_Alive_PeriodElapsedCallback();
     void TIM_PID_PeriodElapsedCallback();
     uint8_t Send_Control_Command();
     uint8_t Send_Position_Command();
+    uint8_t Send_Emmx_Position_Command();
     void Send_Query_Command(Enum_ZDT_Motor_Query_Type Query_Type);
     void Send_Timed_Query_Command(Enum_ZDT_Motor_Query_Type Query_Type, uint16_t Period_ms);
 
@@ -108,6 +117,7 @@ protected:
 
     Enum_ZDT_Motor_Status ZDT_Motor_Status = ZDT_Motor_Status_DISABLE;
     Enum_ZDT_Motor_Control_Status ZDT_Motor_Control_Status = ZDT_Motor_Control_Status_DISABLE;
+    Enum_ZDT_Motor_Control_Status Pre_ZDT_Motor_Control_Status = ZDT_Motor_Control_Status_DISABLE;
     Enum_ZDT_Motor_Control_Method ZDT_Motor_Control_Method = ZDT_Motor_Control_Method_TORQUE_MIT;
     Enum_ZDT_Motor_Control_Method Pre_ZDT_Motor_Control_Method = ZDT_Motor_Control_Method_TORQUE_MIT;
 
@@ -116,6 +126,7 @@ protected:
     uint8_t Angle_Valid_Flag = 0;
     uint8_t Omega_Valid_Flag = 0;
     uint16_t Position_Feedback_Period_ms = 0;
+    uint8_t Emmx_Position_Command_Valid = 0U;
 
     float Max_Torque = ZDT_L40_MAX_TORQUE;
     float Max_Current = ZDT_MOTOR_DEFAULT_MAX_CURRENT;
@@ -131,10 +142,16 @@ protected:
     float MIT_K_P = 0.0f;
     float MIT_K_D = 0.0f;
     float Output_Torque = 0.0f;
+    float Emmx_Pulses_Per_Revolution = ZDT_EMMX_PULSES_PER_REVOLUTION;
+    uint16_t Emmx_Max_RPM = ZDT_EMMX_MAX_RPM;
+    uint8_t Emmx_Acceleration = ZDT_EMMX_DEFAULT_ACCELERATION;
+    uint16_t Emmx_Default_RPM = ZDT_EMMX_DEFAULT_RPM;
+    float Emmx_Last_Target_Angle = 0.0f;
 
     void Data_Process(const Struct_CAN_Rx_Buffer *CAN_RxMessage);
     uint8_t Send_Command(uint8_t *Command, uint16_t Length);
     uint8_t Send_Torque_Command(float Torque);
+    uint8_t Send_Emmx_Enable_Command(uint8_t Enable);
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -211,6 +228,11 @@ inline float Class_ZDT_Motor::Get_Max_Omega()
     return (Max_Omega);
 }
 
+inline uint8_t Class_ZDT_Motor::Get_Position_Feedback_Valid()
+{
+    return (Angle_Valid_Flag);
+}
+
 inline void Class_ZDT_Motor::Set_ZDT_Motor_Control_Status(Enum_ZDT_Motor_Control_Status __Control_Status)
 {
     if (ZDT_Motor_Control_Status != __Control_Status)
@@ -229,6 +251,8 @@ inline void Class_ZDT_Motor::Set_ZDT_Motor_Control_Method(Enum_ZDT_Motor_Control
         PID_Angle.Set_Integral_Error(0.0f);
         PID_Omega.Set_Integral_Error(0.0f);
         Output_Torque = 0.0f;
+        Omega_Valid_Flag = 0U;
+        Emmx_Position_Command_Valid = 0U;
     }
     ZDT_Motor_Control_Method = __Control_Method;
     Pre_ZDT_Motor_Control_Method = __Control_Method;
@@ -262,6 +286,17 @@ inline void Class_ZDT_Motor::Set_MIT_K_P(float __MIT_K_P)
 inline void Class_ZDT_Motor::Set_MIT_K_D(float __MIT_K_D)
 {
     MIT_K_D = __MIT_K_D;
+}
+
+inline void Class_ZDT_Motor::Set_Emmx_Position_Config(float __Pulses_Per_Revolution,
+                                                       uint16_t __Max_RPM, uint8_t __Acceleration,
+                                                       uint16_t __Default_RPM)
+{
+    Emmx_Pulses_Per_Revolution = __Pulses_Per_Revolution > 0.0f ? __Pulses_Per_Revolution : ZDT_EMMX_PULSES_PER_REVOLUTION;
+    Emmx_Max_RPM = __Max_RPM > 0U ? __Max_RPM : ZDT_EMMX_MAX_RPM;
+    Emmx_Acceleration = __Acceleration;
+    Emmx_Default_RPM = __Default_RPM > 0U ? __Default_RPM : ZDT_EMMX_DEFAULT_RPM;
+    Emmx_Position_Command_Valid = 0U;
 }
 
 #endif
