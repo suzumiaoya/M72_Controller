@@ -21,6 +21,7 @@
 
 #define ZDT_MOTOR_TIMED_QUERY_AUX_CODE    (0x18U)
 #define ZDT_MOTOR_CHECKSUM                (0x6BU)
+#define ZDT_MOTOR_ABSOLUTE_POSITION       (0x01U)
 #define ZDT_MOTOR_RELATIVE_CURRENT_POS    (0x02U)
 #define ZDT_MOTOR_SYNC_DISABLE            (0x00U)
 
@@ -235,11 +236,6 @@ uint8_t Class_ZDT_Motor::Send_Emmx_Enable_Command(uint8_t Enable)
 
 uint8_t Class_ZDT_Motor::Send_Emmx_Position_Command()
 {
-    if (Angle_Valid_Flag == 0U)
-    {
-        return static_cast<uint8_t>(HAL_ERROR);
-    }
-
     float tmp_pulse_resolution = Emmx_Pulses_Per_Revolution;
     if (tmp_pulse_resolution <= FLT_EPSILON)
     {
@@ -253,9 +249,9 @@ uint8_t Class_ZDT_Motor::Send_Emmx_Position_Command()
         return static_cast<uint8_t>(HAL_OK);
     }
 
-    float tmp_delta_angle = Target_Angle - Data.Now_Angle;
-    uint8_t tmp_direction = tmp_delta_angle >= 0.0f ? 0U : 1U;
-    uint32_t tmp_pulses = ZDT_Motor_Position_Rad_To_Pulses(tmp_delta_angle, tmp_pulse_resolution);
+    uint8_t tmp_direction = Target_Angle >= 0.0f ? 0U : 1U;
+    uint32_t tmp_pulses =
+        ZDT_Motor_Position_Rad_To_Pulses(Target_Angle, tmp_pulse_resolution);
 
     float tmp_target_omega = Math_Abs(Target_Omega);
     uint16_t tmp_rpm = tmp_target_omega <= FLT_EPSILON ? Emmx_Default_RPM :
@@ -280,7 +276,7 @@ uint8_t Class_ZDT_Motor::Send_Emmx_Position_Command()
         static_cast<uint8_t>(tmp_pulses >> 16),
         static_cast<uint8_t>(tmp_pulses >> 8),
         static_cast<uint8_t>(tmp_pulses),
-        ZDT_MOTOR_RELATIVE_CURRENT_POS,
+        ZDT_MOTOR_ABSOLUTE_POSITION,
         ZDT_MOTOR_SYNC_DISABLE,
         ZDT_MOTOR_CHECKSUM,
     };

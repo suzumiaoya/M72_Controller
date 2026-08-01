@@ -85,29 +85,14 @@ struct Struct_Static_Identify_Pose
     float Joint_Angle[CONTROLLER_JOINT_NUM];
 };
 
-enum Enum_Static_Identify_State : uint8_t
-{
-    Static_Identify_State_IDLE = 0U,
-    Static_Identify_State_WAIT_FEEDBACK,
-    Static_Identify_State_WAIT_TUNING,
-    Static_Identify_State_MOVE_TO_POSE,
-    Static_Identify_State_SETTLE_FORWARD,
-    Static_Identify_State_SAMPLE_FORWARD,
-    Static_Identify_State_MOVE_TO_REVERSE_APPROACH,
-    Static_Identify_State_MOVE_TO_REVERSE_POSE,
-    Static_Identify_State_SETTLE_REVERSE,
-    Static_Identify_State_SAMPLE_REVERSE,
-    Static_Identify_State_COMPLETE,
-    Static_Identify_State_FAULT,
-};
-
 struct Struct_Static_Identify_Runtime
 {
-    volatile uint8_t Start_Request;
-    volatile uint8_t Abort_Request;
+    volatile uint8_t Manipulator_Control_Status_Request;
+    volatile uint8_t Identify_Entry_Request;
+    volatile float Tuning_Target_Joint_Angle[3];
     volatile float MIT_K_P[3];
     volatile float MIT_K_D[3];
-    volatile float Joint_Profile_Omega;
+    volatile float J0_J2_Profile_Omega;
     volatile float ZDT_Target_Omega;
     volatile float Gravity_Compensation_Ratio;
 };
@@ -117,15 +102,11 @@ struct Struct_Static_Identify_Monitor
     volatile uint32_t Millisecond;
     volatile uint16_t Pose_Index;
     volatile uint8_t State;
-    volatile uint8_t Fault_Code;
     volatile float Target_Joint_Angle[CONTROLLER_JOINT_NUM];
     volatile float Current_Joint_Angle[CONTROLLER_JOINT_NUM];
     volatile float Current_Joint_Omega[CONTROLLER_JOINT_NUM];
     volatile float Current_Joint_Torque[3];
     volatile float Gravity_Compensation_Torque[3];
-    volatile uint32_t CAN_Tx_Error_Count;
-    volatile uint32_t CAN_Tx_Busy_Count;
-    volatile uint8_t CAN_Tx_Min_Free_Level;
 };
 
 extern const Struct_Joint_Limit Left_Arm_Joint_Limit[CONTROLLER_JOINT_NUM];

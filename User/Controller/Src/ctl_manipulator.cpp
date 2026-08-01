@@ -16,19 +16,7 @@
 #define STATIC_IDENTIFY_SAMPLE_TIME_MS            (1000U)
 #define STATIC_IDENTIFY_POSITION_TOLERANCE        (0.035f)
 #define STATIC_IDENTIFY_OMEGA_TOLERANCE           (0.10f)
-#define STATIC_IDENTIFY_REVERSE_APPROACH          (0.080f)
-#define STATIC_IDENTIFY_FEEDBACK_TIMEOUT_MS       (2000U)
-#define STATIC_IDENTIFY_MOVE_TIMEOUT_MS           (15000U)
-#define STATIC_IDENTIFY_PROFILE_OMEGA_MIN         (0.02f)
-#define STATIC_IDENTIFY_PROFILE_OMEGA_MAX         (0.50f)
-
-enum Enum_Static_Identify_Fault_Code : uint8_t
-{
-    Static_Identify_Fault_NONE = 0U,
-    Static_Identify_Fault_FEEDBACK_TIMEOUT = 1U,
-    Static_Identify_Fault_MOVE_TIMEOUT = 2U,
-    Static_Identify_Fault_ABORTED = 3U,
-};
+#define STATIC_IDENTIFY_APPROACH_OFFSET            (0.080f)
 
 static FDCAN_HandleTypeDef *Get_CAN_Handler(Enum_Bus_ID Bus_ID)
 {
@@ -68,7 +56,7 @@ static Struct_UART_Manage_Object *Get_UART_Manage_Object(Enum_Bus_ID Bus_ID)
     }
 }
 
-static float Static_Identify_Constrain_Workspace(float Target, const Struct_Joint_Limit *Limit)
+static float Static_Identify_Constrain_Central_Workspace(float Target, const Struct_Joint_Limit *Limit)
 {
     if ((Limit == 0) || (Limit->Min_Angle <= (-FLT_MAX * 0.5f)) ||
         (Limit->Max_Angle >= (FLT_MAX * 0.5f)))
@@ -85,7 +73,8 @@ static float Static_Identify_Constrain_Workspace(float Target, const Struct_Join
 void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
 {
     Manipulator_ID = __Manipulator_ID;
-    Static_Identify_Enabled = Manipulator_ID == Static_Identify_Active_Arm ? 1U : 0U;
+    uint8_t tmp_static_identify_enabled =
+        Manipulator_ID == Static_Identify_Active_Arm ? 1U : 0U;
 
     const Struct_Dynamics_Link_Param *tmp_link_params = 0;
 
@@ -104,8 +93,10 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
         tmp_link_params = Right_Dynamics_Link_Param;
     }
 
-    Enum_ZDT_Motor_Control_Method tmp_zdt_method = Static_Identify_Enabled != 0U ?
-        ZDT_Motor_Control_Method_EMMX_POSITION : ZDT_Motor_Control_Method_TORQUE_MIT;
+    Enum_ZDT_Motor_Control_Method tmp_zdt_method =
+        tmp_static_identify_enabled != 0U ?
+        ZDT_Motor_Control_Method_EMMX_POSITION :
+        ZDT_Motor_Control_Method_TORQUE_MIT;
 
     Motor_J0.Init(Get_UART_Manage_Object(Joint_Binding[Controller_Joint_ID_J0].Bus_ID),
                   Joint_Binding[Controller_Joint_ID_J0].Device_ID,
@@ -135,14 +126,17 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
                   tmp_zdt_method,
                   ZDT_L40_MAX_TORQUE);
 
-    if (Static_Identify_Enabled != 0U)
+    if (tmp_static_identify_enabled != 0U)
     {
-        Motor_J3.Set_Emmx_Position_Config(ZDT_EMMX_PULSES_PER_REVOLUTION, ZDT_EMMX_MAX_RPM,
-                                           ZDT_EMMX_DEFAULT_ACCELERATION, ZDT_EMMX_DEFAULT_RPM);
-        Motor_J4.Set_Emmx_Position_Config(ZDT_EMMX_PULSES_PER_REVOLUTION, ZDT_EMMX_MAX_RPM,
-                                           ZDT_EMMX_DEFAULT_ACCELERATION, ZDT_EMMX_DEFAULT_RPM);
-        Motor_J5.Set_Emmx_Position_Config(ZDT_EMMX_PULSES_PER_REVOLUTION, ZDT_EMMX_MAX_RPM,
-                                           ZDT_EMMX_DEFAULT_ACCELERATION, ZDT_EMMX_DEFAULT_RPM);
+        Motor_J3.Set_Emmx_Position_Config(
+            ZDT_EMMX_PULSES_PER_REVOLUTION, ZDT_EMMX_MAX_RPM,
+            ZDT_EMMX_DEFAULT_ACCELERATION, ZDT_EMMX_DEFAULT_RPM);
+        Motor_J4.Set_Emmx_Position_Config(
+            ZDT_EMMX_PULSES_PER_REVOLUTION, ZDT_EMMX_MAX_RPM,
+            ZDT_EMMX_DEFAULT_ACCELERATION, ZDT_EMMX_DEFAULT_RPM);
+        Motor_J5.Set_Emmx_Position_Config(
+            ZDT_EMMX_PULSES_PER_REVOLUTION, ZDT_EMMX_MAX_RPM,
+            ZDT_EMMX_DEFAULT_ACCELERATION, ZDT_EMMX_DEFAULT_RPM);
     }
 
     Kinematics.Init();
@@ -150,23 +144,35 @@ void Class_Manipulator::Init(Enum_Manipulator_ID __Manipulator_ID)
     Dynamics.Set_Link_Params(tmp_link_params);
 
     CAN_Schedule_Slot = 0U;
-    Static_Identify_State = Static_Identify_State_IDLE;
-    Static_Identify_Pose_Index = 0U;
-    Static_Identify_State_Tick = 0U;
+    Static_Identify_FSM.Init();
     Static_Identify_Millisecond = 0U;
-    Static_Identify_Fault_Code = 0U;
-    Static_Identify_Start_Armed = 0U;
-    CAN_Tx_Error_Count = 0U;
-    CAN_Tx_Busy_Count = 0U;
-    CAN_Tx_Min_Free_Level = 0xffU;
+
+    for (uint8_t i = Controller_Joint_ID_J0; i <= Controller_Joint_ID_J2; i++)
+    {
+        Target_Joint_Angle[i] =
+            Static_Identify_Runtime.Tuning_Target_Joint_Angle[i];
+        Static_Identify_Target[i] = Target_Joint_Angle[i];
+    }
+    for (uint8_t i = Controller_Joint_ID_J3; i < CONTROLLER_JOINT_NUM; i++)
+    {
+        Target_Joint_Angle[i] = 0.0f;
+        Static_Identify_Target[i] = 0.0f;
+    }
+
     Update_Current_State();
 
-    Motor_J3.Send_Timed_Query_Command(ZDT_Motor_Query_Type_POSITION,
-                                      MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD);
-    Motor_J4.Send_Timed_Query_Command(ZDT_Motor_Query_Type_POSITION,
-                                      MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD);
-    Motor_J5.Send_Timed_Query_Command(ZDT_Motor_Query_Type_POSITION,
-                                      MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD);
+    if (tmp_static_identify_enabled != 0U)
+    {
+        Motor_J3.Send_Timed_Query_Command(
+            ZDT_Motor_Query_Type_POSITION,
+            MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD);
+        Motor_J4.Send_Timed_Query_Command(
+            ZDT_Motor_Query_Type_POSITION,
+            MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD);
+        Motor_J5.Send_Timed_Query_Command(
+            ZDT_Motor_Query_Type_POSITION,
+            MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD);
+    }
 }
 
 float Class_Manipulator::Motor_Angle_To_Joint_Angle(uint8_t Joint_ID, float Motor_Angle)
@@ -260,67 +266,6 @@ void Class_Manipulator::Calculate_Model()
 
 void Class_Manipulator::Output()
 {
-    if (Static_Identify_Enabled != 0U)
-    {
-        uint8_t tmp_zdt_enable = (Static_Identify_State >= Static_Identify_State_WAIT_TUNING) &&
-                                 (Static_Identify_State != Static_Identify_State_FAULT);
-        uint8_t tmp_upstream_enable = (Static_Identify_State >= Static_Identify_State_MOVE_TO_POSE) &&
-                                      (Static_Identify_State != Static_Identify_State_FAULT);
-
-        Motor_J0.Set_Unitree_Motor_Control_Status(tmp_upstream_enable != 0U ?
-            Unitree_Motor_Control_Status_ENABLE : Unitree_Motor_Control_Status_DISABLE);
-        Motor_J1.Set_AK_Control_Status(tmp_upstream_enable != 0U ?
-            AK_Motor_Control_Status_ENABLE : AK_Motor_Control_Status_DISABLE);
-        Motor_J2.Set_AK_Control_Status(tmp_upstream_enable != 0U ?
-            AK_Motor_Control_Status_ENABLE : AK_Motor_Control_Status_DISABLE);
-        Motor_J3.Set_ZDT_Motor_Control_Status(tmp_zdt_enable != 0U ?
-            ZDT_Motor_Control_Status_ENABLE : ZDT_Motor_Control_Status_DISABLE);
-        Motor_J4.Set_ZDT_Motor_Control_Status(tmp_zdt_enable != 0U ?
-            ZDT_Motor_Control_Status_ENABLE : ZDT_Motor_Control_Status_DISABLE);
-        Motor_J5.Set_ZDT_Motor_Control_Status(tmp_zdt_enable != 0U ?
-            ZDT_Motor_Control_Status_ENABLE : ZDT_Motor_Control_Status_DISABLE);
-
-        Motor_J0.Set_Target_Angle(Joint_Angle_To_Motor_Angle(
-            Controller_Joint_ID_J0, Target_Joint_Angle[Controller_Joint_ID_J0]));
-        Motor_J1.Set_Target_Angle(Joint_Angle_To_Motor_Angle(
-            Controller_Joint_ID_J1, Target_Joint_Angle[Controller_Joint_ID_J1]));
-        Motor_J2.Set_Target_Angle(Joint_Angle_To_Motor_Angle(
-            Controller_Joint_ID_J2, Target_Joint_Angle[Controller_Joint_ID_J2]));
-        Motor_J3.Set_Target_Angle(Joint_Angle_To_Motor_Angle(
-            Controller_Joint_ID_J3, Target_Joint_Angle[Controller_Joint_ID_J3]));
-        Motor_J4.Set_Target_Angle(Joint_Angle_To_Motor_Angle(
-            Controller_Joint_ID_J4, Target_Joint_Angle[Controller_Joint_ID_J4]));
-        Motor_J5.Set_Target_Angle(Joint_Angle_To_Motor_Angle(
-            Controller_Joint_ID_J5, Target_Joint_Angle[Controller_Joint_ID_J5]));
-
-        Motor_J0.Set_Target_Omega(Joint_Omega_To_Motor_Omega(
-            Controller_Joint_ID_J0, Target_Joint_Omega[Controller_Joint_ID_J0]));
-        Motor_J1.Set_Target_Omega(Joint_Omega_To_Motor_Omega(
-            Controller_Joint_ID_J1, Target_Joint_Omega[Controller_Joint_ID_J1]));
-        Motor_J2.Set_Target_Omega(Joint_Omega_To_Motor_Omega(
-            Controller_Joint_ID_J2, Target_Joint_Omega[Controller_Joint_ID_J2]));
-        Motor_J3.Set_Target_Omega(Joint_Omega_To_Motor_Omega(
-            Controller_Joint_ID_J3, Target_Joint_Omega[Controller_Joint_ID_J3]));
-        Motor_J4.Set_Target_Omega(Joint_Omega_To_Motor_Omega(
-            Controller_Joint_ID_J4, Target_Joint_Omega[Controller_Joint_ID_J4]));
-        Motor_J5.Set_Target_Omega(Joint_Omega_To_Motor_Omega(
-            Controller_Joint_ID_J5, Target_Joint_Omega[Controller_Joint_ID_J5]));
-
-        Motor_J0.Set_Target_Torque(tmp_upstream_enable != 0U ?
-            Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J0,
-                Target_Joint_Torque[Controller_Joint_ID_J0] +
-                Gravity_Compensation_Torque[Controller_Joint_ID_J0]) : 0.0f);
-        Motor_J1.Set_Target_Torque(tmp_upstream_enable != 0U ?
-            Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J1,
-                Target_Joint_Torque[Controller_Joint_ID_J1] +
-                Gravity_Compensation_Torque[Controller_Joint_ID_J1]) : 0.0f);
-        Motor_J2.Set_Target_Torque(tmp_upstream_enable != 0U ?
-            Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J2,
-                Target_Joint_Torque[Controller_Joint_ID_J2] +
-                Gravity_Compensation_Torque[Controller_Joint_ID_J2]) : 0.0f);
-        return;
-    }
-
     // 失能模式
     if (Manipulator_Control_Status == Manipulator_Control_Status_DISABLE)
     {
@@ -456,135 +401,20 @@ void Class_Manipulator::Update_Current_State()
         Motor_Torque_To_Joint_Torque(Controller_Joint_ID_J5, Motor_J5.Get_Now_Torque());
 }
 
-void Class_Manipulator::Static_Identify_Set_State(Enum_Static_Identify_State State)
-{
-    Static_Identify_State = State;
-    Static_Identify_State_Tick = 0U;
-    Static_Identify_Start_Armed = 0U;
-}
-
-void Class_Manipulator::Static_Identify_Set_Target(const float *Joint_Angle)
-{
-    if (Joint_Angle == 0)
-    {
-        return;
-    }
-
-    for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
-    {
-        Static_Identify_Target[i] = Static_Identify_Constrain_Workspace(Joint_Angle[i], &Joint_Limit[i]);
-    }
-}
-
-void Class_Manipulator::Static_Identify_Update_J0_J2_Profile()
-{
-    float tmp_profile_omega = Static_Identify_Runtime.Joint_Profile_Omega;
-    Math_Constrain(&tmp_profile_omega, STATIC_IDENTIFY_PROFILE_OMEGA_MIN,
-                   STATIC_IDENTIFY_PROFILE_OMEGA_MAX);
-    float tmp_step = tmp_profile_omega * 0.001f;
-
-    float tmp_zdt_omega = Static_Identify_Runtime.ZDT_Target_Omega;
-    Math_Constrain(&tmp_zdt_omega, 0.0f, ZDT_MOTOR_DEFAULT_MAX_OMEGA);
-
-    for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
-    {
-        float tmp_delta = Static_Identify_Target[i] - Target_Joint_Angle[i];
-        if (Math_Abs(tmp_delta) <= tmp_step)
-        {
-            Target_Joint_Angle[i] = Static_Identify_Target[i];
-            Target_Joint_Omega[i] = 0.0f;
-        }
-        else
-        {
-            Target_Joint_Angle[i] += tmp_delta > 0.0f ? tmp_step : -tmp_step;
-            Target_Joint_Omega[i] = i <= Controller_Joint_ID_J2 ?
-                (tmp_delta > 0.0f ? tmp_profile_omega : -tmp_profile_omega) : tmp_zdt_omega;
-        }
-    }
-}
-
-uint8_t Class_Manipulator::Static_Identify_At_Target()
-{
-    for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
-    {
-        if ((Math_Abs(Static_Identify_Target[i] - Target_Joint_Angle[i]) > 0.0001f) ||
-            (Math_Abs(Static_Identify_Target[i] - Current_Joint_Angle[i]) >
-             STATIC_IDENTIFY_POSITION_TOLERANCE) ||
-            (Math_Abs(Current_Joint_Omega[i]) > STATIC_IDENTIFY_OMEGA_TOLERANCE))
-        {
-            return 0U;
-        }
-    }
-
-    return 1U;
-}
-
-uint8_t Class_Manipulator::Static_Identify_Feedback_Ready()
-{
-    return (Motor_J3.Get_Position_Feedback_Valid() != 0U) &&
-           (Motor_J4.Get_Position_Feedback_Valid() != 0U) &&
-           (Motor_J5.Get_Position_Feedback_Valid() != 0U);
-}
-
-void Class_Manipulator::Static_Identify_Update_Monitor()
-{
-    Static_Identify_Monitor.Millisecond = Static_Identify_Millisecond;
-    Static_Identify_Monitor.Pose_Index = Static_Identify_Pose_Index;
-    Static_Identify_Monitor.State = static_cast<uint8_t>(Static_Identify_State);
-    Static_Identify_Monitor.Fault_Code = Static_Identify_Fault_Code;
-    Static_Identify_Monitor.CAN_Tx_Error_Count = CAN_Tx_Error_Count;
-    Static_Identify_Monitor.CAN_Tx_Busy_Count = CAN_Tx_Busy_Count;
-    Static_Identify_Monitor.CAN_Tx_Min_Free_Level = CAN_Tx_Min_Free_Level;
-
-    for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
-    {
-        Static_Identify_Monitor.Target_Joint_Angle[i] = Target_Joint_Angle[i];
-        Static_Identify_Monitor.Current_Joint_Angle[i] = Current_Joint_Angle[i];
-        Static_Identify_Monitor.Current_Joint_Omega[i] = Current_Joint_Omega[i];
-    }
-
-    for (uint8_t i = 0U; i <= Controller_Joint_ID_J2; i++)
-    {
-        Static_Identify_Monitor.Current_Joint_Torque[i] = Current_Joint_Torque[i];
-        Static_Identify_Monitor.Gravity_Compensation_Torque[i] = Gravity_Compensation_Torque[i];
-    }
-}
-
-void Class_Manipulator::Static_Identify_Record_CAN_Status(uint8_t Status)
-{
-    FDCAN_HandleTypeDef *tmp_handler = Get_CAN_Handler(Joint_Binding[Controller_Joint_ID_J1].Bus_ID);
-    if (tmp_handler != 0)
-    {
-        uint32_t tmp_free_level = HAL_FDCAN_GetTxFifoFreeLevel(tmp_handler);
-        if (tmp_free_level < CAN_Tx_Min_Free_Level)
-        {
-            CAN_Tx_Min_Free_Level = static_cast<uint8_t>(tmp_free_level);
-        }
-    }
-
-    if (Status == static_cast<uint8_t>(HAL_BUSY))
-    {
-        CAN_Tx_Busy_Count++;
-    }
-    else if (Status != static_cast<uint8_t>(HAL_OK))
-    {
-        CAN_Tx_Error_Count++;
-    }
-}
-
 void Class_Manipulator::Static_Identify_PeriodElapsedCallback()
 {
-    if (Static_Identify_Enabled == 0U)
-    {
-        return;
-    }
-
     Static_Identify_Millisecond++;
-    Static_Identify_State_Tick++;
 
-    float tmp_gravity_ratio = Static_Identify_Runtime.Gravity_Compensation_Ratio;
+    Enum_Manipulator_Control_Status tmp_control_status =
+        Static_Identify_Runtime.Manipulator_Control_Status_Request != 0U ?
+        Manipulator_Control_Status_ENABLE :
+        Manipulator_Control_Status_DISABLE;
+    Set_Manipulator_Control_Status(tmp_control_status);
+
+    float tmp_gravity_ratio =
+        Static_Identify_Runtime.Gravity_Compensation_Ratio;
     Math_Constrain(&tmp_gravity_ratio, 0.0f, 2.0f);
-    for (uint8_t i = 0U; i <= Controller_Joint_ID_J2; i++)
+    for (uint8_t i = Controller_Joint_ID_J0; i <= Controller_Joint_ID_J2; i++)
     {
         Gravity_Compensation_Ratio[i] = tmp_gravity_ratio;
     }
@@ -593,206 +423,152 @@ void Class_Manipulator::Static_Identify_PeriodElapsedCallback()
         Gravity_Compensation_Ratio[i] = 0.0f;
     }
 
-    Motor_J0.Set_MIT_K_P(Static_Identify_Runtime.MIT_K_P[Controller_Joint_ID_J0]);
-    Motor_J0.Set_MIT_K_D(Static_Identify_Runtime.MIT_K_D[Controller_Joint_ID_J0]);
-    Motor_J1.Set_MIT_K_P(Static_Identify_Runtime.MIT_K_P[Controller_Joint_ID_J1]);
-    Motor_J1.Set_MIT_K_D(Static_Identify_Runtime.MIT_K_D[Controller_Joint_ID_J1]);
-    Motor_J2.Set_MIT_K_P(Static_Identify_Runtime.MIT_K_P[Controller_Joint_ID_J2]);
-    Motor_J2.Set_MIT_K_D(Static_Identify_Runtime.MIT_K_D[Controller_Joint_ID_J2]);
+    Motor_J0.Set_MIT_K_P(
+        Static_Identify_Runtime.MIT_K_P[Controller_Joint_ID_J0]);
+    Motor_J0.Set_MIT_K_D(
+        Static_Identify_Runtime.MIT_K_D[Controller_Joint_ID_J0]);
+    Motor_J1.Set_MIT_K_P(
+        Static_Identify_Runtime.MIT_K_P[Controller_Joint_ID_J1]);
+    Motor_J1.Set_MIT_K_D(
+        Static_Identify_Runtime.MIT_K_D[Controller_Joint_ID_J1]);
+    Motor_J2.Set_MIT_K_P(
+        Static_Identify_Runtime.MIT_K_P[Controller_Joint_ID_J2]);
+    Motor_J2.Set_MIT_K_D(
+        Static_Identify_Runtime.MIT_K_D[Controller_Joint_ID_J2]);
 
-    if (Static_Identify_Runtime.Abort_Request != 0U)
+    float tmp_zdt_omega =
+        Math_Abs(Static_Identify_Runtime.ZDT_Target_Omega);
+    for (uint8_t i = Controller_Joint_ID_J3; i < CONTROLLER_JOINT_NUM; i++)
     {
-        Static_Identify_Fault_Code = Static_Identify_Fault_ABORTED;
-        Static_Identify_Set_State(Static_Identify_State_FAULT);
+        Target_Joint_Omega[i] = tmp_zdt_omega;
+    }
+
+    uint8_t tmp_entry_enable =
+        Static_Identify_Runtime.Identify_Entry_Request != 0U ? 1U : 0U;
+    uint8_t tmp_arm_enable =
+        tmp_control_status == Manipulator_Control_Status_ENABLE ? 1U : 0U;
+
+    if (tmp_entry_enable == 0U)
+    {
+        Static_Identify_FSM.TIM_PeriodElapsedCallback(
+            0U, tmp_arm_enable, 0U, STATIC_IDENTIFY_POSE_COUNT,
+            STATIC_IDENTIFY_SETTLE_TIME_MS, STATIC_IDENTIFY_SAMPLE_TIME_MS);
+
+        Static_Identify_Apply_Tuning_Targets(
+            Target_Joint_Angle,
+            Static_Identify_Runtime.Tuning_Target_Joint_Angle, 3U);
+        for (uint8_t i = Controller_Joint_ID_J0;
+             i <= Controller_Joint_ID_J2; i++)
+        {
+            Target_Joint_Omega[i] = 0.0f;
+            Static_Identify_Target[i] = Target_Joint_Angle[i];
+        }
         return;
     }
 
-    const Struct_Static_Identify_Pose *tmp_pose = Manipulator_ID == Manipulator_ID_LEFT ?
-        Static_Identify_Left_Pose : Static_Identify_Right_Pose;
+    uint8_t tmp_at_target = Static_Identify_At_Target();
+    Static_Identify_FSM.TIM_PeriodElapsedCallback(
+        tmp_entry_enable, tmp_arm_enable, tmp_at_target,
+        STATIC_IDENTIFY_POSE_COUNT, STATIC_IDENTIFY_SETTLE_TIME_MS,
+        STATIC_IDENTIFY_SAMPLE_TIME_MS);
 
-    switch (Static_Identify_State)
+    uint8_t tmp_state = Static_Identify_FSM.Get_Now_Status_Serial();
+    uint16_t tmp_pose_index = Static_Identify_FSM.Get_Pose_Index();
+
+    if ((tmp_state != Static_Identify_FSM_DISABLED) &&
+        (tmp_pose_index < STATIC_IDENTIFY_POSE_COUNT))
     {
-        case (Static_Identify_State_IDLE):
-        {
-            if (Static_Identify_Runtime.Start_Request != 0U)
-            {
-                Static_Identify_Fault_Code = Static_Identify_Fault_NONE;
-                Static_Identify_Set_State(Static_Identify_State_WAIT_FEEDBACK);
-            }
-        }
-        break;
+        const Struct_Static_Identify_Pose *tmp_pose =
+            Manipulator_ID == Manipulator_ID_LEFT ?
+            Static_Identify_Left_Pose : Static_Identify_Right_Pose;
 
-        case (Static_Identify_State_WAIT_FEEDBACK):
+        float tmp_offset = 0.0f;
+        if (tmp_state == Static_Identify_FSM_MOVE_FORWARD_APPROACH)
         {
-            if (Static_Identify_Feedback_Ready() != 0U)
-            {
-                for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
-                {
-                    Target_Joint_Angle[i] = Current_Joint_Angle[i];
-                    Target_Joint_Omega[i] = 0.0f;
-                    Target_Joint_Torque[i] = 0.0f;
-                    Static_Identify_Target[i] = Current_Joint_Angle[i];
-                }
-                Static_Identify_Set_State(Static_Identify_State_WAIT_TUNING);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_FEEDBACK_TIMEOUT_MS)
-            {
-                Static_Identify_Fault_Code = Static_Identify_Fault_FEEDBACK_TIMEOUT;
-                Static_Identify_Set_State(Static_Identify_State_FAULT);
-            }
+            tmp_offset = -STATIC_IDENTIFY_APPROACH_OFFSET;
         }
-        break;
+        else if (tmp_state == Static_Identify_FSM_MOVE_REVERSE_APPROACH)
+        {
+            tmp_offset = STATIC_IDENTIFY_APPROACH_OFFSET;
+        }
 
-        case (Static_Identify_State_WAIT_TUNING):
+        for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
         {
-            if (Static_Identify_Runtime.Start_Request == 0U)
-            {
-                Static_Identify_Start_Armed = 1U;
-            }
-            else if (Static_Identify_Start_Armed != 0U)
-            {
-                Static_Identify_Pose_Index = 0U;
-                Static_Identify_Set_Target(tmp_pose[Static_Identify_Pose_Index].Joint_Angle);
-                Static_Identify_Set_State(Static_Identify_State_MOVE_TO_POSE);
-            }
+            Static_Identify_Target[i] =
+                Static_Identify_Constrain_Central_Workspace(
+                    tmp_pose[tmp_pose_index].Joint_Angle[i] + tmp_offset,
+                    &Joint_Limit[i]);
         }
-        break;
 
-        case (Static_Identify_State_MOVE_TO_POSE):
+        float tmp_profile_step =
+            Math_Abs(Static_Identify_Runtime.J0_J2_Profile_Omega) *
+            0.001f;
+        for (uint8_t i = Controller_Joint_ID_J0;
+             i <= Controller_Joint_ID_J2; i++)
         {
-            Static_Identify_Update_J0_J2_Profile();
-            if (Static_Identify_At_Target() != 0U)
-            {
-                Static_Identify_Set_State(Static_Identify_State_SETTLE_FORWARD);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_MOVE_TIMEOUT_MS)
-            {
-                Static_Identify_Fault_Code = Static_Identify_Fault_MOVE_TIMEOUT;
-                Static_Identify_Set_State(Static_Identify_State_FAULT);
-            }
+            float tmp_previous_target = Target_Joint_Angle[i];
+            Target_Joint_Angle[i] = Static_Identify_Profile_Step(
+                tmp_previous_target, Static_Identify_Target[i],
+                tmp_profile_step);
+            Target_Joint_Omega[i] =
+                (Target_Joint_Angle[i] - tmp_previous_target) * 1000.0f;
         }
-        break;
 
-        case (Static_Identify_State_SETTLE_FORWARD):
+        for (uint8_t i = Controller_Joint_ID_J3;
+             i < CONTROLLER_JOINT_NUM; i++)
         {
-            Static_Identify_Update_J0_J2_Profile();
-            if (Static_Identify_At_Target() == 0U)
-            {
-                Static_Identify_Set_State(Static_Identify_State_MOVE_TO_POSE);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_SETTLE_TIME_MS)
-            {
-                Static_Identify_Set_State(Static_Identify_State_SAMPLE_FORWARD);
-            }
+            Target_Joint_Angle[i] = Static_Identify_Target[i];
         }
-        break;
+    }
 
-        case (Static_Identify_State_SAMPLE_FORWARD):
-        {
-            if (Static_Identify_At_Target() == 0U)
-            {
-                Static_Identify_Set_State(Static_Identify_State_MOVE_TO_POSE);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_SAMPLE_TIME_MS)
-            {
-                float tmp_reverse_target[CONTROLLER_JOINT_NUM];
-                for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
-                {
-                    tmp_reverse_target[i] = tmp_pose[Static_Identify_Pose_Index].Joint_Angle[i] +
-                                            STATIC_IDENTIFY_REVERSE_APPROACH;
-                }
-                Static_Identify_Set_Target(tmp_reverse_target);
-                Static_Identify_Set_State(Static_Identify_State_MOVE_TO_REVERSE_APPROACH);
-            }
-        }
-        break;
+    Static_Identify_Mirror_Command_Targets(
+        Target_Joint_Angle,
+        Static_Identify_Runtime.Tuning_Target_Joint_Angle, 3U);
+}
 
-        case (Static_Identify_State_MOVE_TO_REVERSE_APPROACH):
+uint8_t Class_Manipulator::Static_Identify_At_Target()
+{
+    for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
+    {
+        if ((Math_Abs(Static_Identify_Target[i] -
+                      Target_Joint_Angle[i]) > 0.0001f) ||
+            (Math_Abs(Static_Identify_Target[i] -
+                      Current_Joint_Angle[i]) >
+             STATIC_IDENTIFY_POSITION_TOLERANCE) ||
+            (Math_Abs(Current_Joint_Omega[i]) >
+             STATIC_IDENTIFY_OMEGA_TOLERANCE))
         {
-            Static_Identify_Update_J0_J2_Profile();
-            if (Static_Identify_At_Target() != 0U)
-            {
-                Static_Identify_Set_Target(tmp_pose[Static_Identify_Pose_Index].Joint_Angle);
-                Static_Identify_Set_State(Static_Identify_State_MOVE_TO_REVERSE_POSE);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_MOVE_TIMEOUT_MS)
-            {
-                Static_Identify_Fault_Code = Static_Identify_Fault_MOVE_TIMEOUT;
-                Static_Identify_Set_State(Static_Identify_State_FAULT);
-            }
+            return 0U;
         }
-        break;
+    }
+    return 1U;
+}
 
-        case (Static_Identify_State_MOVE_TO_REVERSE_POSE):
-        {
-            Static_Identify_Update_J0_J2_Profile();
-            if (Static_Identify_At_Target() != 0U)
-            {
-                Static_Identify_Set_State(Static_Identify_State_SETTLE_REVERSE);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_MOVE_TIMEOUT_MS)
-            {
-                Static_Identify_Fault_Code = Static_Identify_Fault_MOVE_TIMEOUT;
-                Static_Identify_Set_State(Static_Identify_State_FAULT);
-            }
-        }
-        break;
+void Class_Manipulator::Static_Identify_Update_Monitor()
+{
+    Static_Identify_Monitor.Millisecond = Static_Identify_Millisecond;
+    Static_Identify_Monitor.Pose_Index =
+        Static_Identify_FSM.Get_Pose_Index();
+    Static_Identify_Monitor.State =
+        Static_Identify_FSM.Get_Now_Status_Serial();
 
-        case (Static_Identify_State_SETTLE_REVERSE):
-        {
-            Static_Identify_Update_J0_J2_Profile();
-            if (Static_Identify_At_Target() == 0U)
-            {
-                Static_Identify_Set_State(Static_Identify_State_MOVE_TO_REVERSE_POSE);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_SETTLE_TIME_MS)
-            {
-                Static_Identify_Set_State(Static_Identify_State_SAMPLE_REVERSE);
-            }
-        }
-        break;
+    for (uint8_t i = 0U; i < CONTROLLER_JOINT_NUM; i++)
+    {
+        Static_Identify_Monitor.Target_Joint_Angle[i] =
+            Target_Joint_Angle[i];
+        Static_Identify_Monitor.Current_Joint_Angle[i] =
+            Current_Joint_Angle[i];
+        Static_Identify_Monitor.Current_Joint_Omega[i] =
+            Current_Joint_Omega[i];
+    }
 
-        case (Static_Identify_State_SAMPLE_REVERSE):
-        {
-            if (Static_Identify_At_Target() == 0U)
-            {
-                Static_Identify_Set_State(Static_Identify_State_MOVE_TO_REVERSE_POSE);
-            }
-            else if (Static_Identify_State_Tick >= STATIC_IDENTIFY_SAMPLE_TIME_MS)
-            {
-                Static_Identify_Pose_Index++;
-                if (Static_Identify_Pose_Index >= STATIC_IDENTIFY_POSE_COUNT)
-                {
-                    Static_Identify_Set_State(Static_Identify_State_COMPLETE);
-                }
-                else
-                {
-                    Static_Identify_Set_Target(tmp_pose[Static_Identify_Pose_Index].Joint_Angle);
-                    Static_Identify_Set_State(Static_Identify_State_MOVE_TO_POSE);
-                }
-            }
-        }
-        break;
-
-        case (Static_Identify_State_COMPLETE):
-        {
-        }
-        break;
-
-        case (Static_Identify_State_FAULT):
-        {
-            if ((Static_Identify_Runtime.Start_Request == 0U) &&
-                (Static_Identify_Runtime.Abort_Request == 0U))
-            {
-                Static_Identify_Set_State(Static_Identify_State_IDLE);
-            }
-        }
-        break;
-
-        default:
-        {
-        }
-        break;
+    for (uint8_t i = Controller_Joint_ID_J0;
+         i <= Controller_Joint_ID_J2; i++)
+    {
+        Static_Identify_Monitor.Current_Joint_Torque[i] =
+            Current_Joint_Torque[i];
+        Static_Identify_Monitor.Gravity_Compensation_Torque[i] =
+            Gravity_Compensation_Torque[i];
     }
 }
 
@@ -839,13 +615,12 @@ void Class_Manipulator::TIM_Calculate_PeriodElapsedCallback()
 {
     Update_Current_State();
 
-    if (Static_Identify_Enabled != 0U)
+    if (Manipulator_ID == Static_Identify_Active_Arm)
     {
         Static_Identify_PeriodElapsedCallback();
     }
 
     Calculate_Model();
-
     Output();
 
     Motor_J0.TIM_Process_PeriodElapsedCallback();
@@ -853,7 +628,7 @@ void Class_Manipulator::TIM_Calculate_PeriodElapsedCallback()
     Motor_J4.TIM_PID_PeriodElapsedCallback();
     Motor_J5.TIM_PID_PeriodElapsedCallback();
 
-    if (Static_Identify_Enabled != 0U)
+    if (Manipulator_ID == Static_Identify_Active_Arm)
     {
         Static_Identify_Update_Monitor();
     }
@@ -861,55 +636,32 @@ void Class_Manipulator::TIM_Calculate_PeriodElapsedCallback()
 
 void Class_Manipulator::TIM_CAN_PeriodElapsedCallback()
 {
-    if (Static_Identify_Enabled != 0U)
+    if (Manipulator_ID == Static_Identify_Active_Arm)
     {
-        uint8_t tmp_status = static_cast<uint8_t>(HAL_OK);
-
         switch (CAN_Schedule_Slot)
         {
-            case (STATIC_IDENTIFY_AK_SLOT_J1):
-            {
-                tmp_status = Motor_J1.Task_Process_PeriodElapsedCallback();
-            }
-            break;
+            case STATIC_IDENTIFY_AK_SLOT_J1:
+                Motor_J1.Task_Process_PeriodElapsedCallback();
+                break;
 
-            case (STATIC_IDENTIFY_AK_SLOT_J2):
-            {
-                tmp_status = Motor_J2.Task_Process_PeriodElapsedCallback();
-            }
-            break;
+            case STATIC_IDENTIFY_AK_SLOT_J2:
+                Motor_J2.Task_Process_PeriodElapsedCallback();
+                break;
 
-            case (STATIC_IDENTIFY_ZDT_SLOT_J3):
-            {
-                tmp_status = Motor_J3.Send_Control_Command();
-            }
-            break;
+            case STATIC_IDENTIFY_ZDT_SLOT_J3:
+                (void)Motor_J3.Send_Control_Command();
+                break;
 
-            case (STATIC_IDENTIFY_ZDT_SLOT_J4):
-            {
-                tmp_status = Motor_J4.Send_Control_Command();
-            }
-            break;
+            case STATIC_IDENTIFY_ZDT_SLOT_J4:
+                (void)Motor_J4.Send_Control_Command();
+                break;
 
-            case (STATIC_IDENTIFY_ZDT_SLOT_J5):
-            {
-                tmp_status = Motor_J5.Send_Control_Command();
-            }
-            break;
+            case STATIC_IDENTIFY_ZDT_SLOT_J5:
+                (void)Motor_J5.Send_Control_Command();
+                break;
 
             default:
-            {
-            }
-            break;
-        }
-
-        if ((CAN_Schedule_Slot == STATIC_IDENTIFY_AK_SLOT_J1) ||
-            (CAN_Schedule_Slot == STATIC_IDENTIFY_AK_SLOT_J2) ||
-            (CAN_Schedule_Slot == STATIC_IDENTIFY_ZDT_SLOT_J3) ||
-            (CAN_Schedule_Slot == STATIC_IDENTIFY_ZDT_SLOT_J4) ||
-            (CAN_Schedule_Slot == STATIC_IDENTIFY_ZDT_SLOT_J5))
-        {
-            Static_Identify_Record_CAN_Status(tmp_status);
+                break;
         }
 
         CAN_Schedule_Slot++;
@@ -924,79 +676,46 @@ void Class_Manipulator::TIM_CAN_PeriodElapsedCallback()
     {
         case (0U):
         case (8U):
-        {
             Motor_J1.Task_Process_PeriodElapsedCallback();
-        }
-        break;
+            break;
 
         case (1U):
         case (9U):
-        {
             Motor_J2.Task_Process_PeriodElapsedCallback();
-        }
-        break;
+            break;
 
         case (2U):
         case (10U):
-        {
             (void)Motor_J3.Send_Control_Command();
-        }
-        break;
+            break;
 
         case (3U):
         case (11U):
-        {
             (void)Motor_J4.Send_Control_Command();
-        }
-        break;
+            break;
 
         case (4U):
         case (12U):
-        {
             (void)Motor_J5.Send_Control_Command();
-        }
-        break;
+            break;
 
         case (5U):
-        {
+        case (13U):
             Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+            break;
 
         case (6U):
-        {
+        case (14U):
             Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+            break;
 
         case (7U):
-        {
-            Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
-
-        case (13U):
-        {
-            Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
-
-        case (14U):
-        {
-            Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
-
         case (15U):
-        {
             Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+            break;
 
         default:
-        {
-        }
-        break;
+            break;
     }
 
     CAN_Schedule_Slot++;

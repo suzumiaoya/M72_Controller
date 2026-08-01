@@ -16,6 +16,16 @@
 
 /* Private macros ------------------------------------------------------------*/
 
+static constexpr float AK80_SERVO_GEAR_RATIO = 6.0f;
+static constexpr float AK80_SERVO_POLE_PAIRS = 7.0f;
+static constexpr float AK80_SERVO_POSITION_SCALE = 10000.0f;
+static constexpr float AK80_SERVO_SPEED_SCALE = 10.0f;
+static constexpr float AK80_SERVO_CURRENT_SCALE = 1000.0f;
+static constexpr float AK80_SERVO_FEEDBACK_POSITION_SCALE = 0.1f;
+static constexpr float AK80_SERVO_FEEDBACK_CURRENT_SCALE = 0.01f;
+static constexpr float AK80_SERVO_POSITION_MAX_DEG = 36000.0f;
+static constexpr float AK80_SERVO_CURRENT_PROTOCOL_MAX = 60.0f;
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
@@ -24,6 +34,8 @@
 uint8_t AK_Motor_CAN_Message_Enter[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
 // 失能电机
 uint8_t AK_Motor_CAN_Message_Exit[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
+// 伺服模式失能时发送0A电流命令
+uint8_t AK_Motor_CAN_Message_Zero_Current[4] = {0x00, 0x00, 0x00, 0x00};
 // 保存当前位置为零点
 uint8_t AK_Motor_CAN_Message_Save_Zero[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe};
 
@@ -156,7 +168,7 @@ uint8_t *allocate_tx_data(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN_ID)
  * @param __Torque_Max 扭矩最大值
  */
 void Class_AK_Motor_80_6::Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN_ID, Enum_AK_Motor_Control_Method __Control_Method, float __MIT_K_P, float __MIT_K_D,
-                               int32_t __Position_Offset, float __Angle_Max, float __Omega_Max, float __Torque_Max, float __Slope_Angle)
+                               int32_t __Position_Offset, float __Angle_Max, float __Omega_Max, float __Torque_Max, float __Slope_Angle, float __Current_Max)
 {
     if (hcan->Instance == FDCAN1)
     {
@@ -168,14 +180,17 @@ void Class_AK_Motor_80_6::Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN
     }
 
     CAN_ID = __CAN_ID;
-    UNUSED(__Control_Method);
-    AK_Motor_Control_Method = AK_CONTROL_METHOD_MIT;
+    AK_Motor_Control_Method = __Control_Method;
     Position_Offset = __Position_Offset;
     Angle_Max = __Angle_Max;
     Omega_Max = __Omega_Max;
     Torque_Max = __Torque_Max;
+    Current_Max = Math_Abs(__Current_Max);
+    Math_Constrain(&Current_Max, 0.0f, AK80_SERVO_CURRENT_PROTOCOL_MAX);
     MIT_K_P = __MIT_K_P;
     MIT_K_D = __MIT_K_D;
+    Target_Current = 0.0f;
+    Target_Acceleration = 1.0f;
     Slope_Joint_Angle.Init(__Slope_Angle, __Slope_Angle);
     CAN_Tx_Data = allocate_tx_data(hcan, __CAN_ID);
 
@@ -190,6 +205,7 @@ void Class_AK_Motor_80_6::Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN
     Data.Now_Angle = 0.0f;
     Data.Now_Omega = 0.0f;
     Data.Now_Torque = 0.0f;
+    Data.Now_Current = 0.0f;
     Data.Now_Rotor_Temperature = 0.0f;
     Data.error_statue = NONE_ERROR;
     Data.Pre_Position = 0;
@@ -204,7 +220,6 @@ void Class_AK_Motor_80_6::Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN
  */
 void Class_AK_Motor_80_6::Data_Process(uint8_t *Rx_Data)
 {
-    uint16_t tmp_position, tmp_omega, tmp_torque;
     uint8_t AK_Rx_Data[8];
 
     if (CAN_Manage_Object == 0)
@@ -212,30 +227,70 @@ void Class_AK_Motor_80_6::Data_Process(uint8_t *Rx_Data)
         return;
     }
 
-    if ((CAN_Manage_Object->Rx_Buffer.Header.IdType != FDCAN_STANDARD_ID) || (CAN_Manage_Object->Rx_Buffer.Header.DataLength != FDCAN_DLC_BYTES_8))
-    {
-        return;
-    }
-
     memcpy(AK_Rx_Data, Rx_Data, 8);
 
-    tmp_position = (AK_Rx_Data[1] << 8) | (AK_Rx_Data[2]);
-    tmp_omega = (AK_Rx_Data[3] << 4) | (AK_Rx_Data[4] >> 4);
-    tmp_torque = ((AK_Rx_Data[4] & 0x0f) << 8) | (AK_Rx_Data[5]);
-
-    Data.CAN_ID = (Enum_AK_Motor_ID)(AK_Rx_Data[0]);
-    Data.Now_Angle = Math_Int_To_Float(tmp_position, 0, (1 << 16) - 1, -Angle_Max, Angle_Max);
-    Data.Now_Omega = Math_Int_To_Float(tmp_omega, 0, (1 << 12) - 1, -Omega_Max, Omega_Max);
-    Data.Now_Torque = Math_Int_To_Float(tmp_torque, 0, (1 << 12) - 1, -Torque_Max, Torque_Max);
-    Data.Now_Rotor_Temperature = AK_Rx_Data[6];
-    Data.error_statue = (ERROR_STATUE_TYPE_T)(AK_Rx_Data[7]);
-    Data.Pre_Position = tmp_position;
-    Data.Total_Position = tmp_position + Position_Offset;
-    Data.Total_Round = 0;
-
-    if (AK_Motor_Control_Status == AK_Motor_Control_Status_ENABLE)
+    switch (AK_Motor_Control_Method)
     {
-        Torque_Delta_Data_Process();
+    case (AK_CONTROL_METHOD_MIT):
+    {
+        if ((CAN_Manage_Object->Rx_Buffer.Header.IdType != FDCAN_STANDARD_ID) ||
+            (CAN_Manage_Object->Rx_Buffer.Header.DataLength != FDCAN_DLC_BYTES_8))
+        {
+            return;
+        }
+
+        uint16_t tmp_position = (AK_Rx_Data[1] << 8) | (AK_Rx_Data[2]);
+        uint16_t tmp_omega = (AK_Rx_Data[3] << 4) | (AK_Rx_Data[4] >> 4);
+        uint16_t tmp_torque = ((AK_Rx_Data[4] & 0x0f) << 8) | (AK_Rx_Data[5]);
+
+        Data.CAN_ID = (Enum_AK_Motor_ID)(AK_Rx_Data[0]);
+        Data.Now_Angle = Math_Int_To_Float(tmp_position, 0, (1 << 16) - 1, -Angle_Max, Angle_Max);
+        Data.Now_Omega = Math_Int_To_Float(tmp_omega, 0, (1 << 12) - 1, -Omega_Max, Omega_Max);
+        Data.Now_Torque = Math_Int_To_Float(tmp_torque, 0, (1 << 12) - 1, -Torque_Max, Torque_Max);
+        Data.Now_Current = 0.0f;
+        Data.Now_Rotor_Temperature = AK_Rx_Data[6];
+        Data.error_statue = (ERROR_STATUE_TYPE_T)(AK_Rx_Data[7]);
+        Data.Pre_Position = tmp_position;
+        Data.Total_Position = tmp_position + Position_Offset;
+        Data.Total_Round = 0;
+
+        if (AK_Motor_Control_Status == AK_Motor_Control_Status_ENABLE)
+        {
+            Torque_Delta_Data_Process();
+        }
+    }
+    break;
+    case (AK_CONTROL_METHOD_CURRENT):
+    case (AK_CONTROL_METHOD_POSITION_OMEGA):
+    {
+        if ((CAN_Manage_Object->Rx_Buffer.Header.IdType != FDCAN_EXTENDED_ID) ||
+            (CAN_Manage_Object->Rx_Buffer.Header.DataLength != FDCAN_DLC_BYTES_8) ||
+            ((CAN_Manage_Object->Rx_Buffer.Header.Identifier & 0xffU) != static_cast<uint32_t>(CAN_ID)))
+        {
+            return;
+        }
+
+        int16_t tmp_position = static_cast<int16_t>((static_cast<uint16_t>(AK_Rx_Data[0]) << 8) | AK_Rx_Data[1]);
+        int16_t tmp_omega = static_cast<int16_t>((static_cast<uint16_t>(AK_Rx_Data[2]) << 8) | AK_Rx_Data[3]);
+        int16_t tmp_current = static_cast<int16_t>((static_cast<uint16_t>(AK_Rx_Data[4]) << 8) | AK_Rx_Data[5]);
+
+        Data.CAN_ID = static_cast<Enum_AK_Motor_ID>(CAN_Manage_Object->Rx_Buffer.Header.Identifier & 0xffU);
+        Data.Now_Angle = static_cast<float>(tmp_position) * AK80_SERVO_FEEDBACK_POSITION_SCALE * DEG_TO_RAD;
+        Data.Now_Omega = static_cast<float>(tmp_omega) * AK80_SERVO_SPEED_SCALE * RPM_TO_RADPS /
+                         (AK80_SERVO_GEAR_RATIO * AK80_SERVO_POLE_PAIRS);
+        Data.Now_Torque = 0.0f;
+        Data.Now_Current = static_cast<float>(tmp_current) * AK80_SERVO_FEEDBACK_CURRENT_SCALE;
+        Data.Now_Rotor_Temperature = static_cast<float>(static_cast<int8_t>(AK_Rx_Data[6]));
+        Data.error_statue = static_cast<ERROR_STATUE_TYPE_T>(AK_Rx_Data[7]);
+        Data.Pre_Position = static_cast<uint16_t>(tmp_position);
+        Data.Total_Position = static_cast<int32_t>(tmp_position) + Position_Offset;
+        Data.Total_Round = 0;
+    }
+    break;
+    default:
+    {
+    }
+    break;
     }
 }
 
@@ -306,6 +361,18 @@ void Class_AK_Motor_80_6::Task_Alive_PeriodElapsedCallback()
         }
     }
     break;
+    case (AK_CONTROL_METHOD_CURRENT):
+    case (AK_CONTROL_METHOD_POSITION_OMEGA):
+    {
+        if (AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE)
+        {
+            CAN_Send_Extended_Data(CAN_Manage_Object->CAN_Handler,
+                                   (static_cast<uint32_t>(AK_CONTROL_METHOD_CURRENT) << 8) |
+                                       static_cast<uint32_t>(CAN_ID),
+                                   AK_Motor_CAN_Message_Zero_Current, 4);
+        }
+    }
+    break;
     default:
     {
     }
@@ -324,7 +391,7 @@ void Class_AK_Motor_80_6::Task_PID_PeriodElapsedCallback()
  * @brief TIM定时器中断发送回调函数
  *
  */
-uint8_t Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
+void Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
 {
     switch (AK_Motor_Control_Method)
     {
@@ -332,7 +399,7 @@ uint8_t Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
     {
         if ((AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE) || (CAN_Manage_Object == 0) || (CAN_Tx_Data == 0))
         {
-            return static_cast<uint8_t>(HAL_OK);
+            break;
         }
 
         uint16_t tmp_position = Math_Float_To_Int(Target_Angle, -Angle_Max, Angle_Max, 0, (1 << 16) - 1);
@@ -362,7 +429,55 @@ uint8_t Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
         uint8_t tmp_torque_7_0 = tmp_torque;
         memcpy(&CAN_Tx_Data[7], &tmp_torque_7_0, sizeof(uint8_t));
 
-        return CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8);
+        CAN_Send_Data(CAN_Manage_Object->CAN_Handler, (uint16_t)CAN_ID, CAN_Tx_Data, 8);
+    }
+    break;
+    case (AK_CONTROL_METHOD_CURRENT):
+    {
+        if ((AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE) || (CAN_Manage_Object == 0) || (CAN_Tx_Data == 0))
+        {
+            break;
+        }
+
+        float tmp_current = Target_Current;
+        Math_Constrain(&tmp_current, -Current_Max, Current_Max);
+        int32_t tmp_current_raw = static_cast<int32_t>(tmp_current * AK80_SERVO_CURRENT_SCALE);
+        Math_Endian_Reverse_32(&tmp_current_raw);
+        memcpy(&CAN_Tx_Data[0], &tmp_current_raw, sizeof(int32_t));
+
+        CAN_Send_Extended_Data(CAN_Manage_Object->CAN_Handler,
+                               (static_cast<uint32_t>(AK_CONTROL_METHOD_CURRENT) << 8) | static_cast<uint32_t>(CAN_ID),
+                               CAN_Tx_Data, 4);
+    }
+    break;
+    case (AK_CONTROL_METHOD_POSITION_OMEGA):
+    {
+        if ((AK_Motor_Control_Status == AK_Motor_Control_Status_DISABLE) || (CAN_Manage_Object == 0) || (CAN_Tx_Data == 0))
+        {
+            break;
+        }
+
+        float tmp_position_deg = Target_Angle * RAD_TO_DEG;
+        Math_Constrain(&tmp_position_deg, -AK80_SERVO_POSITION_MAX_DEG, AK80_SERVO_POSITION_MAX_DEG);
+        int32_t tmp_position_raw = static_cast<int32_t>(tmp_position_deg * AK80_SERVO_POSITION_SCALE);
+        Math_Endian_Reverse_32(&tmp_position_raw);
+        memcpy(&CAN_Tx_Data[0], &tmp_position_raw, sizeof(int32_t));
+
+        float tmp_speed_raw = Target_Omega * AK80_SERVO_GEAR_RATIO * AK80_SERVO_POLE_PAIRS / RPM_TO_RADPS / AK80_SERVO_SPEED_SCALE;
+        Math_Constrain(&tmp_speed_raw, -32768.0f, 32767.0f);
+        int16_t tmp_speed_raw_16 = static_cast<int16_t>(tmp_speed_raw);
+        Math_Endian_Reverse_16(&tmp_speed_raw_16);
+        memcpy(&CAN_Tx_Data[4], &tmp_speed_raw_16, sizeof(int16_t));
+
+        float tmp_acceleration_raw = Math_Abs(Target_Acceleration) * AK80_SERVO_GEAR_RATIO * AK80_SERVO_POLE_PAIRS / RPM_TO_RADPS / AK80_SERVO_SPEED_SCALE;
+        Math_Constrain(&tmp_acceleration_raw, 0.0f, 32767.0f);
+        int16_t tmp_acceleration_raw_16 = static_cast<int16_t>(tmp_acceleration_raw);
+        Math_Endian_Reverse_16(&tmp_acceleration_raw_16);
+        memcpy(&CAN_Tx_Data[6], &tmp_acceleration_raw_16, sizeof(int16_t));
+
+        CAN_Send_Extended_Data(CAN_Manage_Object->CAN_Handler,
+                               (static_cast<uint32_t>(AK_CONTROL_METHOD_POSITION_OMEGA) << 8) | static_cast<uint32_t>(CAN_ID),
+                               CAN_Tx_Data, 8);
     }
     break;
     default:
@@ -370,8 +485,6 @@ uint8_t Class_AK_Motor_80_6::Task_Process_PeriodElapsedCallback()
     }
     break;
     }
-
-    return static_cast<uint8_t>(HAL_OK);
 }
 
 void Class_AK_Motor_80_6::Clear_Enable_Confirm()

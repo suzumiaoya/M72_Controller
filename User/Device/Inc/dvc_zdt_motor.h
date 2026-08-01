@@ -89,7 +89,6 @@ public:
     inline float Get_MIT_K_P();
     inline float Get_MIT_K_D();
     inline float Get_Max_Omega();
-    inline uint8_t Get_Position_Feedback_Valid();
 
     inline void Set_ZDT_Motor_Control_Status(Enum_ZDT_Motor_Control_Status __Control_Status);
     inline void Set_ZDT_Motor_Control_Method(Enum_ZDT_Motor_Control_Method __Control_Method);
@@ -226,11 +225,6 @@ inline float Class_ZDT_Motor::Get_MIT_K_D()
 inline float Class_ZDT_Motor::Get_Max_Omega()
 {
     return (Max_Omega);
-}
-
-inline uint8_t Class_ZDT_Motor::Get_Position_Feedback_Valid()
-{
-    return (Angle_Valid_Flag);
 }
 
 inline void Class_ZDT_Motor::Set_ZDT_Motor_Control_Status(Enum_ZDT_Motor_Control_Status __Control_Status)

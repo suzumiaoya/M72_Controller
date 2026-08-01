@@ -10,6 +10,7 @@
 #include "dvc_zdt_motor.h"
 #include "alg_kinematics.h"
 #include "alg_dynamics.h"
+#include "alg_static_identify.h"
 
 enum Enum_Manipulator_Control_Status
 {
@@ -77,29 +78,16 @@ protected:
     float Gravity_Compensation_Ratio[CONTROLLER_JOINT_NUM] = {0.0f};
 
     uint8_t CAN_Schedule_Slot = 0U;
-    uint8_t Static_Identify_Enabled = 0U;
-    Enum_Static_Identify_State Static_Identify_State = Static_Identify_State_IDLE;
-    uint16_t Static_Identify_Pose_Index = 0U;
-    uint32_t Static_Identify_State_Tick = 0U;
+    Class_Static_Identify_FSM Static_Identify_FSM;
     uint32_t Static_Identify_Millisecond = 0U;
-    uint8_t Static_Identify_Fault_Code = 0U;
-    uint8_t Static_Identify_Start_Armed = 0U;
     float Static_Identify_Target[CONTROLLER_JOINT_NUM] = {0.0f};
-    uint32_t CAN_Tx_Error_Count = 0U;
-    uint32_t CAN_Tx_Busy_Count = 0U;
-    uint8_t CAN_Tx_Min_Free_Level = 12U;
 
     void Calculate_Model();
     void Output();
     void Update_Current_State();
     void Static_Identify_PeriodElapsedCallback();
-    void Static_Identify_Set_State(Enum_Static_Identify_State State);
-    void Static_Identify_Set_Target(const float *Joint_Angle);
-    void Static_Identify_Update_J0_J2_Profile();
     uint8_t Static_Identify_At_Target();
-    uint8_t Static_Identify_Feedback_Ready();
     void Static_Identify_Update_Monitor();
-    void Static_Identify_Record_CAN_Status(uint8_t Status);
     float Motor_Angle_To_Joint_Angle(uint8_t Joint_ID, float Motor_Angle);
     float Joint_Angle_To_Motor_Angle(uint8_t Joint_ID, float Joint_Angle);
     float Motor_Omega_To_Joint_Omega(uint8_t Joint_ID, float Motor_Omega);

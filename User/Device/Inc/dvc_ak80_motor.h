@@ -86,6 +86,8 @@ enum Enum_AK_Motor_Control_Status
 enum Enum_AK_Motor_Control_Method
 {
     AK_CONTROL_METHOD_MIT = 0,
+    AK_CONTROL_METHOD_CURRENT = 1,
+    AK_CONTROL_METHOD_POSITION_OMEGA = 6,
 };
 
 /**
@@ -98,6 +100,7 @@ struct Struct_AK_Motor_Rx_Data
     float Now_Angle;
     float Now_Omega;
     float Now_Torque;
+    float Now_Current;
     float Now_Rotor_Temperature;
     ERROR_STATUE_TYPE_T error_statue;
     uint16_t Pre_Position;
@@ -137,13 +140,14 @@ public:
     void Init(FDCAN_HandleTypeDef *hcan, Enum_AK_Motor_ID __CAN_ID, Enum_AK_Motor_Control_Method __Control_Method = AK_CONTROL_METHOD_MIT,
               float __MIT_K_P = 0.0f, float __MIT_K_D = 0.0f, int32_t __Position_Offset = 0,
               float __Angle_Max = 12.5f, float __Omega_Max = 76.0f, float __Torque_Max = 12.0f,
-              float __Slope_Angle = 0.1f);
+              float __Slope_Angle = 0.1f, float __Current_Max = 40.0f);
 
     inline Enum_AK_Motor_Control_Status Get_AK_Motor_Control_Status();
     inline Enum_AK_Motor_Status Get_AK_Motor_Status();
     inline float Get_Now_Angle();
     inline float Get_Now_Omega();
     inline float Get_Now_Torque();
+    inline float Get_Now_Current();
     inline float Get_Now_Rotor_Temperature();
     inline Enum_AK_Motor_Control_Method Get_Control_Method();
     inline float Get_MIT_K_P();
@@ -160,11 +164,13 @@ public:
     inline void Set_Target_Angle(float __Target_Angle);
     inline void Set_Target_Omega(float __Target_Omega);
     inline void Set_Target_Torque(float __Target_Torque);
+    inline void Set_Target_Current(float __Target_Current);
+    inline void Set_Target_Acceleration(float __Target_Acceleration);
 
     void CAN_RxCpltCallback(uint8_t *Rx_Data);
     void Task_Alive_PeriodElapsedCallback();
     void Task_PID_PeriodElapsedCallback();
-    uint8_t Task_Process_PeriodElapsedCallback();
+    void Task_Process_PeriodElapsedCallback();
     void Clear_Torque_Delta_Data();
     void Clear_Enable_Confirm();
 
@@ -183,6 +189,8 @@ protected:
     float Omega_Max = 76.0f;
     // 扭矩最大值
     float Torque_Max = 12.0f;
+    // 伺服模式最大电流, A
+    float Current_Max = 40.0f;
 
     // 当前时刻的电机接收Flag
     uint32_t Flag = 0;
@@ -192,7 +200,7 @@ protected:
     // 电机状态
     Enum_AK_Motor_Status AK_Motor_Status = AK_Motor_Status_DISABLE;
     // 电机对外接口信息
-    Struct_AK_Motor_Rx_Data Data = {AK_Motor_ID_0x01, 0.0f, 0.0f, 0.0f, 0.0f, NONE_ERROR, 0, 0, 0};
+    Struct_AK_Motor_Rx_Data Data = {AK_Motor_ID_0x01, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, NONE_ERROR, 0, 0, 0};
 
     // 电机控制状态
     Enum_AK_Motor_Control_Status AK_Motor_Control_Status = AK_Motor_Control_Status_DISABLE;
@@ -218,6 +226,10 @@ protected:
     float Target_Omega = 0.0f;
     // 目标扭矩
     float Target_Torque = 0.0f;
+    // 伺服模式目标电流, A
+    float Target_Current = 0.0f;
+    // 伺服位置速度模式目标角加速度, 输出轴rad/s^2
+    float Target_Acceleration = 1.0f;
 
     void Data_Process(uint8_t *Rx_Data);
     void Torque_Delta_Data_Process();
@@ -250,6 +262,11 @@ float Class_AK_Motor_80_6::Get_Now_Omega()
 float Class_AK_Motor_80_6::Get_Now_Torque()
 {
     return (Data.Now_Torque);
+}
+
+float Class_AK_Motor_80_6::Get_Now_Current()
+{
+    return (Data.Now_Current);
 }
 
 float Class_AK_Motor_80_6::Get_Now_Rotor_Temperature()
@@ -315,8 +332,7 @@ void Class_AK_Motor_80_6::Set_AK_Control_Status(Enum_AK_Motor_Control_Status __A
 
 void Class_AK_Motor_80_6::Set_AK_Motor_Control_Method(Enum_AK_Motor_Control_Method __Control_Method)
 {
-    UNUSED(__Control_Method);
-    AK_Motor_Control_Method = AK_CONTROL_METHOD_MIT;
+    AK_Motor_Control_Method = __Control_Method;
 }
 
 void Class_AK_Motor_80_6::Set_MIT_K_P(float __MIT_K_P)
@@ -342,6 +358,16 @@ void Class_AK_Motor_80_6::Set_Target_Omega(float __Target_Omega)
 void Class_AK_Motor_80_6::Set_Target_Torque(float __Target_Torque)
 {
     Target_Torque = __Target_Torque;
+}
+
+void Class_AK_Motor_80_6::Set_Target_Current(float __Target_Current)
+{
+    Target_Current = __Target_Current;
+}
+
+void Class_AK_Motor_80_6::Set_Target_Acceleration(float __Target_Acceleration)
+{
+    Target_Acceleration = __Target_Acceleration;
 }
 
 #endif
