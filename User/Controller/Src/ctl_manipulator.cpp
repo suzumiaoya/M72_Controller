@@ -579,13 +579,24 @@ void Class_Manipulator::CAN_RxCpltCallback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
         return;
     }
 
-    if ((CAN_RxMessage->Header.Identifier == 0x00U) &&
-        (CAN_RxMessage->Data[0] == Joint_Binding[Controller_Joint_ID_J1].Device_ID))
+    // J1/J2 (AK80) 接收入口：标准帧(MIT反馈, ID=0x00, 电机ID在Data[0]) 或 扩展帧(伺服反馈, 电机ID在ID低字节)。
+    // 两种帧型的具体解包由 Class_AK_Motor_80_6::Data_Process 按 IdType 分流完成。
+
+         // 标准帧，MIT模式
+    if (((CAN_RxMessage->Header.IdType == FDCAN_STANDARD_ID) &&
+         (CAN_RxMessage->Header.Identifier == 0x00U) &&
+         (CAN_RxMessage->Data[0] == Joint_Binding[Controller_Joint_ID_J1].Device_ID)) ||
+         // 拓展帧，伺服模式
+        ((CAN_RxMessage->Header.IdType == FDCAN_EXTENDED_ID) &&
+         ((CAN_RxMessage->Header.Identifier & 0xffU) == Joint_Binding[Controller_Joint_ID_J1].Device_ID)))
     {
         Motor_J1.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
-    else if ((CAN_RxMessage->Header.Identifier == 0x00U) &&
-             (CAN_RxMessage->Data[0] == Joint_Binding[Controller_Joint_ID_J2].Device_ID))
+    else if (((CAN_RxMessage->Header.IdType == FDCAN_STANDARD_ID) &&
+              (CAN_RxMessage->Header.Identifier == 0x00U) &&
+              (CAN_RxMessage->Data[0] == Joint_Binding[Controller_Joint_ID_J2].Device_ID)) ||
+             ((CAN_RxMessage->Header.IdType == FDCAN_EXTENDED_ID) &&
+              ((CAN_RxMessage->Header.Identifier & 0xffU) == Joint_Binding[Controller_Joint_ID_J2].Device_ID)))
     {
         Motor_J2.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
