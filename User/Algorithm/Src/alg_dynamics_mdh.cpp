@@ -2,6 +2,7 @@
 #include "alg_dynamics.h"
 #include <math.h>
 
+#if !USE_URDF_COORDS
 /**
  * @brief 左臂各连杆惯性参数, 在对应连杆的MDH帧下表达
  *
@@ -156,3 +157,5 @@ void Class_Dynamics::Calculate_Gravity_Term()
         Gravity_Torque[i] = -Moment[2];
     }
 }
+
+#endif

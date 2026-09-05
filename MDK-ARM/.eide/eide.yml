@@ -49,8 +49,10 @@ virtualFolder:
         - path: ../User/Algorithm/Src/alg_pid.cpp
         - path: ../User/Algorithm/Src/alg_SMC_Control.cpp
         - path: ../User/Algorithm/Src/alg_slope.cpp
-        - path: ../User/Algorithm/Src/alg_dynamics.cpp
-        - path: ../User/Algorithm/Src/alg_kinematics.cpp
+        - path: ../User/Algorithm/Src/alg_dynamics_mdh.cpp
+        - path: ../User/Algorithm/Src/alg_dynamics_urdf.cpp
+        - path: ../User/Algorithm/Src/alg_kinematics_mdh.cpp
+        - path: ../User/Algorithm/Src/alg_kinematics_urdf.cpp
       folders: []
     - name: Application
       files: []
@@ -132,6 +134,11 @@ virtualFolder:
     - name: Controller
       files:
         - path: ../User/Controller/Src/ctl_manipulator.cpp
+      folders: []
+    - name: Debug
+      files:
+        - path: ../User/Debug/SEGGER_RTT/SEGGER_RTT.c
+        - path: ../User/Debug/Src/rtt_manipulator_debug.cpp
       folders: []
 dependenceList: []
 outDir: .
@@ -295,6 +302,7 @@ targets:
         - __FPU_USED=1
         - ARM_MATH_CM7
         - USE_PWR_LDO_SUPPLY
+        - MANIPULATOR_RTT_DEBUG_ENABLE
       incList:
         - .
         - ../Core/Inc
@@ -316,11 +324,14 @@ targets:
         - .cmsis/include
         - RTE/_ZLLC_2026
         - ../User/Controller/Inc
+        - ../User/Debug/Inc
+        - ../User/Debug/SEGGER_RTT
         - ../DSP/Include/dsp
         - ../DSP/Include
       libList: []
     excludeList:
       - <virtual_root>/Middlewares/USB_Device_Library
+      - <virtual_root>/Algorithm/alg_dynamics.cpp
     settings:
       debugger: cortex-debug
     toolchain: AC6

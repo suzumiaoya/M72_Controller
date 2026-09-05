@@ -12,6 +12,7 @@
 #include "alg_kinematics.h"
 #include <math.h>
 
+#if !USE_URDF_COORDS
 void Class_Kinematics::Init()
 {
     memset(Joint_Angle, 0, sizeof(Joint_Angle));
@@ -88,3 +89,5 @@ void Class_Kinematics::Fkine()
         }
     }
 }
+
+#endif

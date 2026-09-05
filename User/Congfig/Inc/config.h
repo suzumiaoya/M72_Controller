@@ -9,6 +9,14 @@
 #define CONTROLLER_JOINT_NUM      6U
 #define CONTROLLER_CAN_JOINT_NUM  5U
 
+#ifndef USE_URDF_COORDS
+#define USE_URDF_COORDS 1  // 1=URDF, 0=MDH
+#endif
+
+#ifndef CURRENT_ARM_ID
+#define CURRENT_ARM_ID Manipulator_ID_RIGHT
+#endif
+
 enum Enum_Manipulator_ID
 {
     Manipulator_ID_LEFT = 0,
