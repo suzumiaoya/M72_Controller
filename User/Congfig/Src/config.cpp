@@ -37,7 +37,7 @@ const Struct_Joint_Angle_Alignment Left_Arm_Joint_Alignment[CONTROLLER_JOINT_NUM
 
 const Struct_Joint_Angle_Alignment Right_Arm_Joint_Alignment[CONTROLLER_JOINT_NUM] =
 {
-    {Joint_Angle_Direction_SAME, 1.736424f},
+    {Joint_Angle_Direction_INVERTED, 1.739424f},
     {Joint_Angle_Direction_SAME, 0.023841f},
     {Joint_Angle_Direction_SAME, -0.243191f},
     {Joint_Angle_Direction_SAME, 0.0000000f},

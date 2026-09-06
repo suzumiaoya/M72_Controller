@@ -207,3 +207,5 @@ void Class_Dynamics::Calculate_Gravity_Term()
 }
 
 #endif // USE_URDF_COORDS
+
+/************************ COPYRIGHT(C) NEUQ-MOSASAURUS **************************/

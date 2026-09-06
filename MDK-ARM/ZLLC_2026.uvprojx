@@ -535,19 +535,29 @@
               <FilePath>..\User\Algorithm\Src\alg_SMC_Control.cpp</FilePath>
             </File>
             <File>
-              <FileName>alg_kinematics.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\alg_kinematics.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>alg_dynamics.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\User\Algorithm\Src\alg_dynamics.cpp</FilePath>
-            </File>
-            <File>
               <FileName>alg_slope.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Algorithm\Src\alg_slope.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>alg_dynamics_mdh.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Algorithm\Src\alg_dynamics_mdh.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>alg_dynamics_urdf.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Algorithm\Src\alg_dynamics_urdf.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>alg_kinematics_mdh.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Algorithm\Src\alg_kinematics_mdh.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>alg_kinematics_urdf.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Algorithm\Src\alg_kinematics_urdf.cpp</FilePath>
             </File>
           </Files>
         </Group>

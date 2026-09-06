@@ -4,25 +4,25 @@
 #include "fdcan.h"
 #include "usart.h"
 
-#define MANIPULATOR_CAN_SCHEDULE_SLOT_COUNT       (16U)
-#define MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD  (4U)
+#define MANIPULATOR_CAN_SCHEDULE_SLOT_COUNT (16U)
+#define MANIPULATOR_ZDT_POSITION_FEEDBACK_PERIOD (4U)
 
 static FDCAN_HandleTypeDef *Get_CAN_Handler(Enum_Bus_ID Bus_ID)
 {
     switch (Bus_ID)
     {
-        case (Bus_ID_CAN_1):
-        {
-            return (&hfdcan1);
-        }
-        case (Bus_ID_CAN_2):
-        {
-            return (&hfdcan2);
-        }
-        default:
-        {
-            return (0);
-        }
+    case (Bus_ID_CAN_1):
+    {
+        return (&hfdcan1);
+    }
+    case (Bus_ID_CAN_2):
+    {
+        return (&hfdcan2);
+    }
+    default:
+    {
+        return (0);
+    }
     }
 }
 
@@ -30,18 +30,18 @@ static Struct_UART_Manage_Object *Get_UART_Manage_Object(Enum_Bus_ID Bus_ID)
 {
     switch (Bus_ID)
     {
-        case (Bus_ID_RS485_USART2):
-        {
-            return (&UART2_Manage_Object);
-        }
-        case (Bus_ID_RS485_USART3):
-        {
-            return (&UART3_Manage_Object);
-        }
-        default:
-        {
-            return (0);
-        }
+    case (Bus_ID_RS485_USART2):
+    {
+        return (&UART2_Manage_Object);
+    }
+    case (Bus_ID_RS485_USART3):
+    {
+        return (&UART3_Manage_Object);
+    }
+    default:
+    {
+        return (0);
+    }
     }
 }
 
@@ -170,23 +170,14 @@ void Class_Manipulator::Calculate_Model()
     Kinematics.Fkine();
 
     // 动力学计算
-    if (Manipulator_ID == Manipulator_ID_LEFT)
-    {
-        Dynamics.Set_Joint_Angles(Current_Joint_Angle);
-        Dynamics.Calculate();
 
-        // 输出到重力补偿项
-        for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
-        {
-            Gravity_Compensation_Torque[i] = Gravity_Compensation_Ratio[i] * Dynamics.Get_Gravity_Torque(i);
-        }
-    }
-    else
+    Dynamics.Set_Joint_Angles(Current_Joint_Angle);
+    Dynamics.Calculate();
+
+    // 输出到重力补偿项
+    for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
     {
-        for (uint8_t i = 0; i < CONTROLLER_JOINT_NUM; i++)
-        {
-            Gravity_Compensation_Torque[i] = 0.0f;
-        }
+        Gravity_Compensation_Torque[i] = Gravity_Compensation_Ratio[i] * Dynamics.Get_Gravity_Torque(i);
     }
 }
 
@@ -237,7 +228,6 @@ void Class_Manipulator::Output()
     Motor_J5.Set_Target_Angle(
         Joint_Angle_To_Motor_Angle(Controller_Joint_ID_J5, Target_Joint_Angle[Controller_Joint_ID_J5]));
 
-
     // 角速度
     Motor_J0.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J0, Target_Joint_Omega[Controller_Joint_ID_J0]));
@@ -257,32 +247,25 @@ void Class_Manipulator::Output()
     Motor_J5.Set_Target_Omega(
         Joint_Omega_To_Motor_Omega(Controller_Joint_ID_J5, Target_Joint_Omega[Controller_Joint_ID_J5]));
 
-
     // 重力补偿以前馈形式叠加, 不改动Target_Joint_Torque本身
     Motor_J0.Set_Target_Torque(
         Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J0,
-                                     Target_Joint_Torque[Controller_Joint_ID_J0]
-                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J0]));
+                                     Target_Joint_Torque[Controller_Joint_ID_J0] + Gravity_Compensation_Torque[Controller_Joint_ID_J0]));
     Motor_J1.Set_Target_Torque(
         Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J1,
-                                     Target_Joint_Torque[Controller_Joint_ID_J1]
-                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J1]));
+                                     Target_Joint_Torque[Controller_Joint_ID_J1] + Gravity_Compensation_Torque[Controller_Joint_ID_J1]));
     Motor_J2.Set_Target_Torque(
         Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J2,
-                                     Target_Joint_Torque[Controller_Joint_ID_J2]
-                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J2]));
+                                     Target_Joint_Torque[Controller_Joint_ID_J2] + Gravity_Compensation_Torque[Controller_Joint_ID_J2]));
     Motor_J3.Set_Target_Torque(
         Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J3,
-                                     Target_Joint_Torque[Controller_Joint_ID_J3]
-                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J3]));
+                                     Target_Joint_Torque[Controller_Joint_ID_J3] + Gravity_Compensation_Torque[Controller_Joint_ID_J3]));
     Motor_J4.Set_Target_Torque(
         Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J4,
-                                     Target_Joint_Torque[Controller_Joint_ID_J4]
-                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J4]));
+                                     Target_Joint_Torque[Controller_Joint_ID_J4] + Gravity_Compensation_Torque[Controller_Joint_ID_J4]));
     Motor_J5.Set_Target_Torque(
         Joint_Torque_To_Motor_Torque(Controller_Joint_ID_J5,
-                                     Target_Joint_Torque[Controller_Joint_ID_J5]
-                                         + Gravity_Compensation_Torque[Controller_Joint_ID_J5]));
+                                     Target_Joint_Torque[Controller_Joint_ID_J5] + Gravity_Compensation_Torque[Controller_Joint_ID_J5]));
 }
 
 void Class_Manipulator::Update_Current_State()
@@ -384,81 +367,81 @@ void Class_Manipulator::TIM_CAN_PeriodElapsedCallback()
 {
     switch (CAN_Schedule_Slot)
     {
-        case (0U):
-        case (8U):
-        {
-            Motor_J1.Task_Process_PeriodElapsedCallback();
-        }
-        break;
+    case (0U):
+    case (8U):
+    {
+        Motor_J1.Task_Process_PeriodElapsedCallback();
+    }
+    break;
 
-        case (1U):
-        case (9U):
-        {
-            Motor_J2.Task_Process_PeriodElapsedCallback();
-        }
-        break;
+    case (1U):
+    case (9U):
+    {
+        Motor_J2.Task_Process_PeriodElapsedCallback();
+    }
+    break;
 
-        case (2U):
-        case (10U):
-        {
-            (void)Motor_J3.Send_Control_Command();
-        }
-        break;
+    case (2U):
+    case (10U):
+    {
+        (void)Motor_J3.Send_Control_Command();
+    }
+    break;
 
-        case (3U):
-        case (11U):
-        {
-            (void)Motor_J4.Send_Control_Command();
-        }
-        break;
+    case (3U):
+    case (11U):
+    {
+        (void)Motor_J4.Send_Control_Command();
+    }
+    break;
 
-        case (4U):
-        case (12U):
-        {
-            (void)Motor_J5.Send_Control_Command();
-        }
-        break;
+    case (4U):
+    case (12U):
+    {
+        (void)Motor_J5.Send_Control_Command();
+    }
+    break;
 
-        case (5U):
-        {
-            Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+    case (5U):
+    {
+        Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
+    }
+    break;
 
-        case (6U):
-        {
-            Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+    case (6U):
+    {
+        Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
+    }
+    break;
 
-        case (7U):
-        {
-            Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+    case (7U):
+    {
+        Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
+    }
+    break;
 
-        case (13U):
-        {
-            Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+    case (13U):
+    {
+        Motor_J3.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
+    }
+    break;
 
-        case (14U):
-        {
-            Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+    case (14U):
+    {
+        Motor_J4.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
+    }
+    break;
 
-        case (15U):
-        {
-            Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
-        }
-        break;
+    case (15U):
+    {
+        Motor_J5.Send_Query_Command(ZDT_Motor_Query_Type_OMEGA);
+    }
+    break;
 
-        default:
-        {
-        }
-        break;
+    default:
+    {
+    }
+    break;
     }
 
     CAN_Schedule_Slot++;
